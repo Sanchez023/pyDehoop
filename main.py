@@ -3,6 +3,8 @@ from ParamStruct import ParamOutLineWork,ParamDDLContent
 from Table import ReplaceKeyWords,ReplaceKeyWords_spark
 from TransFormer import Transerfrom_addColumn,Transerfrom_mappingList,ExtraColumn,ReMappingList
 
+
+import pandas as pd
 import tqdm 
 if __name__ == '__main__':
     
@@ -14,21 +16,24 @@ if __name__ == '__main__':
     d.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MDY1MDgyNCwiaWF0IjoxNzQwMzkxNjI0fQ.4xeTV7RCB3D_dr7tJSDG_9UoVybxAQ7TVZwhkog0ZRB8ct7rnWLi6e3hTgIAq2hFF1g4Dhmcly-R8LDmPu-77g"
     d.userId = '657253959764803584'
     d.tenantid = '656609118399758336'
-    projectName = '再保域模型开发'
+    projectName = '中台-客户管理其他域模型开发'
     
-    parentid = '682590447167602688'
+    parentid = "683001304129208320"
     workspaceId = '656613585694228480'
     
     fromDbId = "661617050451443712"
-    toDbId = "669540279400792064"
+    toDbId = "682905336633360384"
     
     
-    import pandas as pd
-
-    df= pd.read_excel("C:/Xiaomi Cloud/Desktop/recode-1.xlsx").fillna('')
+   
+    df= pd.read_excel("C:/Xiaomi Cloud/Desktop/cbasic-1.xlsx").fillna('')
+    
     type = 'SYNC'
-    system = 'HBCORE'
-    for i in tqdm.tqdm(range(len(df)),desc="建表中...",total=len(df),colour="GREEN"):
+    system = 'MS_SCRM'
+    
+    with open("./log_id.txt","w",encoding="utf-8") as f:
+        f.write("")
+    for i in tqdm.tqdm(range(len(df)),desc=f"创建{type}中...",total=len(df),colour="GREEN"):
         name = df.iloc[i, 0]
         descr = df.iloc[i, 1]
 
@@ -60,6 +65,7 @@ if __name__ == '__main__':
                 if type == "SYNC":
             
                     toTableName = "STG_"+system+"_"+TABLENAME
+                
                     fromTableName = system+"."+TABLENAME
                 
                     column_list:list[dict]= d.GetColumnInfos(projectName,toDbId,toTableName,"dist")

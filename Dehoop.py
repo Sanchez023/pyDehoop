@@ -13,7 +13,6 @@ from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
 from typing import Literal
 
 
-
 class Root:
     """网络根信息类\n
     用于维护对应的网络地址信息和端口信息，提供了一个端口测试的方法
@@ -76,7 +75,14 @@ class Dehoop(Root):
         self.running_executeId = {}
 
     def Login(self, username: str, passwd: str):
-        """执行登入"""
+        """执行登入\n
+        在进行Login后，会获取token，租户ID，用户ID到dehoop属性中，这些属性将会在后续的方法中被调用。
+        若不提前进行登入，可直接将token，tenantId，userid进行初始化赋值，若不进行初始化，后续操作会出现错误。
+
+        参数：
+        username[str]:  用户账号
+        passwd[str]:    密码
+        """
         result = LoginModule(self.request_url).login(username, passwd)
         if result is not None:
             self.token, self.tenantid, self.userId = result
@@ -91,6 +97,8 @@ class Dehoop(Root):
 
     def QueryProject(self):
         """查询项目\n
+        获取所有的项目名称以及对于的环境ID，对于的名称为ProjectName和envId。
+
         返回参数：
         项目ID和环境ID的字典"""
 
@@ -106,8 +114,16 @@ class Dehoop(Root):
             logger.error("未获取到token,请先登入")
             return None
 
-    def QueryWorkSpace(self, projectName: str):
-        """查询工作空间"""
+    def QueryWorkSpace(self, projectName: str) -> dict[str, str] | None:
+        """查询工作空间\n
+        获取对应项目的工作空间id
+
+        参数：
+        projectname[str]:   项目名称
+
+        返回:
+        workspaces(dict): 工作空间ID与工作空间名称的字典
+        """
 
         if self.projects is None:
             logger.warning("未获取到项目信息，正在获取项目")
@@ -126,6 +142,7 @@ class Dehoop(Root):
 
     def QueryOutLineWorks(self, projectName: str):
         """查询离线作业\n
+        查询该项目下所有的作业的对应信息。
         参数:
             projectName: 项目名称
         """
@@ -148,6 +165,7 @@ class Dehoop(Root):
 
     def CreateDDLWork(self, projectName: str, param: ParamOutLineWork):
         """创建DDL作业\n
+
         参数:
         projectName: 项目名称
         param:       DDL作业参数
@@ -157,7 +175,6 @@ class Dehoop(Root):
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
         projectid: str = self.projects[projectName][0]
-        param.director = self.tenantid
         param.flowId = self.c_nodeMatch[param.parentId]
         id = DataDevelopment(self.request_url).CreateDDLWork(
             self.token, projectid, self.tenantid, param
@@ -188,8 +205,11 @@ class Dehoop(Root):
         if result == None:
             raise Exception("创建失败")
 
-    def DeleteWorkById(self, projectName, id):
-
+    def DeleteWorkById(self, projectName: str, id: str):
+        """删除离线作业\n
+        参数：
+        projectName[str]: 项目名称
+        id[str]:           离线作业ID"""
         if self.c_prjdir is None:
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
@@ -316,6 +336,14 @@ class Dehoop(Root):
     def GenerateDDLScript(
         self, projectName: str, fromdb: str, todb: str, tableName: str
     ) -> str:
+        """生成DDL建表语句\n
+        该方法会获取建表语句所生成的所有字段信息，并以文本的方式返回。
+        参数：
+        projectNmae[str]: 项目名称
+        fromDb[str]:      来源数据库ID
+        toDb[str]:        去向数据库ID
+        tableName[str]:   数据表名称
+        """
         if self.c_prjdir is None:
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
@@ -329,7 +357,11 @@ class Dehoop(Root):
         return GetColumns(res)
 
     def GetResourceType(self, projectName):
-        """获取数据库类型"""
+        """获取数据库类型\n
+        该方法会获取对应项目下的所有的数据库类型
+
+        参数：
+        projectName[str]:   项目名称"""
         if self.c_prjdir is None:
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
@@ -344,7 +376,14 @@ class Dehoop(Root):
             return None
 
     def GetDBResourceId(self, projectName, type: str, isInnertype: bool = False):
-        """获取数据来源ID"""
+        """获取数据来源ID\n
+        获取该项目下指定类型的数据库类型的ID。
+
+        参数：
+        projectName[str]:   项目名称
+        type[str]:          对应的数据库类型
+        isInnertype[bool]:  是否为内部数据源：为True时，表示为获取去向源的数据库，为Flase时，表示为获取来源的数据库
+        """
         if self.c_prjdir is None:
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
@@ -368,7 +407,15 @@ class Dehoop(Root):
         tableName: str,
         type: Literal["src", "dist"],
     ) -> list:
-        """获字段信息"""
+        """获字段信息\n
+        获取对应数据表的字段信息
+
+        参数:
+        projectName[str]:   项目名称
+        resourceId[str]:    数据库ID
+        tableName[str]:     对应数据表名称
+        type[str]:          类型（来源数据库src或去向数据库dist）
+        """
         if self.projects is None:
             logger.warning("未获取到项目信息，正在获取项目")
             self.QueryProject()
@@ -394,11 +441,23 @@ class Dehoop(Root):
         toTableName: str,
         mappingList: list,
         addColumn: list,
-        maxConCurrentNum: int=1,
-        maxTransSpeed: int=10
+        maxConCurrentNum: int = 1,
+        maxTransSpeed: int = 10,
     ):
-        """保存更新离线同步作业"""
-        
+        """保存更新离线同步作业\n
+
+        projectName[str]:       项目名称
+        id[str]:                作业ID
+        fromDbId[str]:          来源数据库Id
+        fromTableName[str]:     来源表名称
+        toDbId[str]:            去向数据库Id
+        toTableName[str]:       去向数据表名称
+        mappingList[List]:      匹配字段列表
+        addColumn[list]:        来源字段列表
+        maxConCurrentNum[int]:  最大并发数
+        maxTransSpeed[int]:     最大传输速度
+        """
+
         if self.projects is None:
             logger.warning("未获取到项目信息，正在获取项目")
             self.QueryProject()
