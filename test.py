@@ -11,6 +11,7 @@ dataFieldId='643765834929405952'
 memoryId = d.GetSpacesInfo(projectName)["测试开发存储空间"]
 res = d.GetBusinessProcesses(projectName,dataFieldId)
 datalayerId = d.GetDataLayers(projectName)["ODS"]["id"]
-pdim = ParamDimension("API生成","table_api","ATOMIC_TRANSACTIONS","None",dataFieldId,datalayerId,memoryId)
-res_id = d.CreateDimension(projectName,pdim)
+pdim = ParamDimension("API生成","table_api","ATOMIC_TRANSACTIONS","None1w11",dataFieldId,datalayerId,memoryId,id="683274365072183296")
+res_id = d.UpdateDimension(projectName,pdim)
+
 print(res_id)

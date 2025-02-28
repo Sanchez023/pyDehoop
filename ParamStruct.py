@@ -227,3 +227,4 @@ class ParamDimension(BaseStruct):
         self.type = type
         self.memorySpaceId = memorySpaceId
         self.projectId = projectId
+        self.id  = kwargs.get("id",None)

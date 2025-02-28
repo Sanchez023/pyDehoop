@@ -9,6 +9,7 @@ from ParamStruct import (
     ParamColumnGet,
     ParamSyncJob,
     ParamDimension,
+    BaseStruct
 )
 from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
 from typing import Literal
@@ -96,6 +97,15 @@ class Dehoop(Root):
             logger.error("登入失败")
             return False
 
+    def PreQueryProject(func):
+        '''查询项目装饰函数'''
+        def wrapTheFunction(self,*args, **kwargs):
+            if self.projects is None:
+                logger.warning("未获取到项目信息，正在获取项目")
+                self.QueryProject()
+            return func(self,*args, **kwargs)
+        return wrapTheFunction
+        
     def QueryProject(self):
         """查询项目\n
         获取所有的项目名称以及对于的环境ID，对于的名称为ProjectName和envId。
@@ -104,8 +114,9 @@ class Dehoop(Root):
         项目ID和环境ID的字典"""
 
         if self.token is not None:
+            p = BaseStruct(searchWord="",page="1",pageSize = 2147483646)
             self.projects = PublicConfig(self.request_url).QueryProject(
-                self.token, self.tenantid
+                self.token, "",self.tenantid,p
             )
             if self.projects is not None:
                 logger.info("查询项目成功")
@@ -114,7 +125,8 @@ class Dehoop(Root):
         else:
             logger.error("未获取到token,请先登入")
             return None
-
+        
+    @PreQueryProject 
     def QueryWorkSpace(self, projectName: str) -> dict[str, str] | None:
         """查询工作空间\n
         获取对应项目的工作空间id
@@ -126,21 +138,22 @@ class Dehoop(Root):
         workspaces(dict): 工作空间ID与工作空间名称的字典
         """
 
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
-            envid: str = self.projects[projectName][1]
 
-            result = PublicConfig(self.request_url).QueryWorkspace(self.token, envid)
-            if result is not None:
-                self.c_workspaces = result
-                logger.info("查询工作空间成功")
-                logger.info(f"工作空间信息：{self.c_workspaces}")
-                return result
+        logger.warning("未获取到项目信息，正在获取项目")
+        self.QueryProject()
+        envid: str = self.projects[projectName][1]
+        p = BaseStruct( envid= envid,searchWord ="",pageSize= "99999999",)
+        result = PublicConfig(self.request_url).QueryWorkspace(self.token, p)
+        if result is not None:
+            self.c_workspaces = result
+            logger.info("查询工作空间成功")
+            logger.info(f"工作空间信息：{self.c_workspaces}")
+            return result
         else:
             logger.error("查询工作空间失败")
             return None
 
+    @PreQueryProject  
     def QueryOutLineWorks(self, projectName: str):
         """查询离线作业\n
         查询该项目下所有的作业的对应信息。
@@ -148,18 +161,15 @@ class Dehoop(Root):
             projectName: 项目名称
         """
 
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
-            projectid: str = self.projects[projectName][0]
-            envid: str = self.projects[projectName][1]
-            self.c_prjdir, self.c_nodeMatch = DataDevelopment(
-                self.request_url
-            ).QueryOutLineWork(self.token, self.tenantid, projectid, envid)
+        projectid: str = self.projects[projectName][0]
+        envid: str = self.projects[projectName][1]
+        self.c_prjdir, self.c_nodeMatch = DataDevelopment(
+            self.request_url
+        ).QueryOutLineWork(self.token, self.tenantid, projectid, envid)
 
-            if self.c_prjdir is not None:
-                logger.info("查询离线作业成功")
-                # logger.info(f"离线作业信息：{self.c_prjdir}")
+        if self.c_prjdir is not None:
+            logger.info("查询离线作业成功")
+            # logger.info(f"离线作业信息：{self.c_prjdir}")
         else:
             logger.error("查询离线作业失败")
             return None
@@ -358,6 +368,7 @@ class Dehoop(Root):
         return GetColumns(res)
 
     def GetResourceType(self, projectName):
+        import time
         """获取数据库类型\n
         该方法会获取对应项目下的所有的数据库类型
 
@@ -367,8 +378,10 @@ class Dehoop(Root):
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
         projectid: str = self.projects[projectName][0]
+        timestamp = int(time.time())
+        p = BaseStruct(timestamp = timestamp)
         res = PublicConfig(self.request_url).GetResourceType(
-            self.token, projectid, self.tenantid
+            self.token, projectid, self.tenantid,p
         )
         if res is not None:
             self.c_dbsType = res
@@ -400,7 +413,8 @@ class Dehoop(Root):
             return res
         else:
             return None
-
+        
+    @PreQueryProject  
     def GetColumnInfos(
         self,
         projectName: str,
@@ -417,9 +431,6 @@ class Dehoop(Root):
         tableName[str]:     对应数据表名称
         type[str]:          类型（来源数据库src或去向数据库dist）
         """
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
 
         projectid: str = self.projects[projectName][0]
         param = ParamColumnGet(dbSourceId=resourceId, tableName=tableName, type=type)
@@ -431,7 +442,8 @@ class Dehoop(Root):
             return res
         else:
             return None
-
+        
+    @PreQueryProject  
     def SaveOrUpdateSyncWork(
         self,
         projectName: str,
@@ -458,11 +470,6 @@ class Dehoop(Root):
         maxConCurrentNum[int]:  最大并发数
         maxTransSpeed[int]:     最大传输速度
         """
-
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
-
         projectid: str = self.projects[projectName][0]
         param = ParamSyncJob(
             id=id,
@@ -484,15 +491,13 @@ class Dehoop(Root):
         else:
             return None
 
-
+    @PreQueryProject
     def GetSpacesInfo(self,projectName:str)->dict[str,str]:
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
         projectid: str = self.projects[projectName][0]
         
+        p = BaseStruct(projectId=projectid)
         res = PublicConfig(self.request_url).GetSpacesInfo(
-            self.token, projectid, self.tenantid,
+            self.token, projectid, self.tenantid,p
         )
         if res is not None:
             return res
@@ -500,14 +505,12 @@ class Dehoop(Root):
             logger.warning("未获取到储存空间信息")
             return None
         
+    @PreQueryProject      
     def GetDataFields(self,projectName:str)->dict[str,str]:
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
         projectid: str = self.projects[projectName][0]
-        
+        p = BaseStruct()
         res = PublicConfig(self.request_url).GetDataFields(
-            self.token, projectid, self.tenantid
+            self.token, projectid, self.tenantid,p
         )
         if res is not None:
             return res
@@ -515,14 +518,12 @@ class Dehoop(Root):
             logger.warning("未获取到数据域信息")
             return None
         
+    @PreQueryProject     
     def GetDataLayers(self,projectName:str)->dict[str,str]:
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
         projectid: str = self.projects[projectName][0]
-        
+        p = BaseStruct(projectId = projectid)
         res = PublicConfig(self.request_url).GetDataLayers(
-            self.token, projectid, self.tenantid
+            self.token, projectid, self.tenantid,p
         )
         if res is not None:
             return res
@@ -530,14 +531,12 @@ class Dehoop(Root):
             logger.warning("未获取到数据分层信息")
             return None
         
+    @PreQueryProject     
     def GetBusinessProcesses(self,projectName:str,dataFieldId:str)->dict[str,str]:
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
         projectid: str = self.projects[projectName][0]
-        
+        param = BaseStruct(dataField = dataFieldId)
         res = PublicConfig(self.request_url).GetBusinessProcesses(
-            self.token, projectid, self.tenantid,dataFieldId
+            self.token, projectid, self.tenantid,param
         )
         if res is not None:
             return res
@@ -545,10 +544,8 @@ class Dehoop(Root):
             logger.warning("未获取到业务过程信息")
             return None
         
+    @PreQueryProject      
     def CreateDimension(self,projectName:str,params:ParamDimension):
-        if self.projects is None:
-            logger.warning("未获取到项目信息，正在获取项目")
-            self.QueryProject()
         projectid: str = self.projects[projectName][0]
         params.projectId = projectid
         res =  ModelBuilder(self.request_url).CreateDimension(
@@ -559,4 +556,29 @@ class Dehoop(Root):
         else:
             logger.warning("未获取到业务过程信息")
             return None
+     
+    @PreQueryProject   
+    def UpdateDimension(self,projectName:str,params:ParamDimension):
+        projectid: str = self.projects[projectName][0]
+        params.projectId = projectid
+        res =  ModelBuilder(self.request_url).UpdateDimension(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
         
+    @PreQueryProject
+    def DeleteDimension(self,projectName:str,id:str):
+        projectid: str = self.projects[projectName][0]
+        params = BaseStruct(id=id)
+        res =  ModelBuilder(self.request_url).DeleteDimension(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None

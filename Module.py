@@ -6,8 +6,10 @@ from ParamStruct import (
     ParamColumnGet,
     ParamSyncJob,
     ParamDimension,
+    BaseStruct
 )
 
+from functools import wraps
 from hashlib import md5
 from log import logger
 from typing import Literal
@@ -28,7 +30,7 @@ class BaseModule:
     def __init__(
         self,
         url: str,
-        request_type: Literal["POST", "GET"],
+        request_type: Literal["POST", "GET", "PUT"],
     ):
         self.url = url
         self.request_type = request_type
@@ -43,10 +45,10 @@ class BaseModule:
         返回：
         requests.Response: 返回请求的响应对象
         """
-        try:
+        try: 
+            if "json_p" not in kwargs:
+                raise ValueError("Missing 'json_p' for POST request")
             if self.request_type == "POST":
-                if "json_p" not in kwargs:
-                    raise ValueError("Missing 'json_p' for POST request")
                 result = requests.post(
                     url=self.url,
                     data=json.dumps(kwargs["json_p"]),
@@ -78,12 +80,59 @@ class BaseModule:
                     verify=False,
                 )
                 return result
+            elif self.request_type == "PUT":
+                result = requests.put(
+                    url=self.url,
+                    data=json.dumps(kwargs["json_p"]),
+                    headers=headers,
+                    verify=False,
+                )
+                return result
             else:
                 raise ValueError(f"Unsupported request type: {self.request_type}")
         except Exception as e:
             logger.error(f"发送请求失败,错误信息:{e}")
             return None
 
+
+def api_request(method, endpoint,descr):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, token, projectid, tenantid, params:BaseStruct,response=None):
+            timestamp = int(time.time())
+            url = f"{self.base_url}{endpoint}?timestamp={timestamp}"
+            self.url = url
+            self.request_type = method
+            logger.debug(self.url)
+
+            json_p = params.to_dict()
+
+            headers = {
+                "dehooptoken": token,
+                "tenantid": tenantid,
+                "projectid": projectid,
+                "connection": "keep-alive",
+                "content-type": "application/json",
+            }
+            logger.info("-"*25+descr+"-"*25)
+            logger.info("请求发送中...")
+            logger.debug(f"头请求内容：\n {headers}")
+            logger.debug(f"请求体内容：\n {json_p}")
+
+            result = self.send(headers, json_p=json_p)
+            if result is None:
+                return None
+            try:
+                logger.info(f"返回状态码:  {result.status_code}")
+                logger.debug(f"返回结果: \n {result.text}")
+                response = json.loads(result.text)
+                return func(self, token, projectid, tenantid, params,response)
+                # return json.loads(result.text)
+            except Exception as e:
+                logger.error(f"请求失败,错误信息:{e}")
+                return None
+        return wrapper
+    return decorator
 
 class LoginModule(BaseModule):
     """登入模块类\n
@@ -159,134 +208,35 @@ class PublicConfig(BaseModule):
         url = f"{base_url}/"
         super().__init__(url, self.request_type)
 
-    def QueryProject(self, token: str, tenant_id: str) -> dict:
-        """查询项目\n
-        参数：
-        token(str):     登入后获取的token
-        tenant_id(str): 登入后获取的tenantid
-
-        返回：
-        dict_prj(dict): 项目ID与项目名称的字典
-        """
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/pro/tabProjects?timestamp={timestamp}"
-        self.url = url
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenant_id,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        json_p = {"searchWord": "", "page": 1, "pageSize": 2147483646}
-
-        logger.info("发送查询项目请求中...")
-
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        logger.info(f"返回状态码:  {result.status_code}")
-        logger.debug(f"返回结果: \n {result.text}")
-
+    @api_request("POST","/dehoop-admin/pro/tabProjects","查询项目接口")
+    def QueryProject(self, token: str,projectid: str, tenantid: str, param:BaseStruct,response=None) -> dict:
         dict_prj = {}
-        try:
-            project_list = json.loads(result.text)["table"]
-            for i in project_list:
-                logger.info(
-                    f"项目名称:{i['projectName']},项目ID:{i['projectId']},环境ID:{i['envId']}"
-                )
-                dict_prj[i["projectName"]] = (i["projectId"], i["envId"])
-            return dict_prj
-
-        except Exception as e:
-            logger.error(f"查询项目失败,错误信息:{e}")
-            return None
-
-    def QueryWorkspace(self, token: str, envid: str) -> dict:
-        """查询工作空间\n
-        参数：
-        token(str):     登入后获取的token
-        envid(str):     环境ID
-
-        返回：
-        workspaces(dict): 工作空间ID与工作空间名称的字典
-        """
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/pro/env/pageQueryWorkspace?timestamp={timestamp}"
-        self.url = url
-
-        headers = {
-            "dehooptoken": token,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-        json_p = {
-            "envId": envid,
-            "searchWord": "",
-            "pageSize": "99999999",
-        }
-
-        logger.info("发送查询工作空间请求中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        logger.info(f"返回状态码:  {result.status_code}")
-        logger.debug(f"返回结果: \n {result.text}")
-
+        project_list = response["table"]
+        for i in project_list:
+            logger.info(
+                f"项目名称:{i['projectName']},项目ID:{i['projectId']},环境ID:{i['envId']}"
+            )
+            dict_prj[i["projectName"]] = (i["projectId"], i["envId"])
+        return dict_prj
+    
+    @api_request("POST","/dehoop-admin/pro/env/pageQueryWorkspace","查询工作空间接口")
+    def QueryWorkspace(self, token: str, param:BaseStruct,response=None) -> dict:
+       
         workspaces = {}
-        try:
-            workSpaceEnriry = json.loads(result.text)["table"][0]["workSpaceEntity"]
-            name = workSpaceEnriry["name"]
-            id = workSpaceEnriry["id"]
-            workspaces[id] = name
-            return workspaces
-        except Exception as e:
-            logger.error(f"查询工作空间失败,错误信息:{e}")
-            return None
-
-    def GetResourceType(self, token: str, projectid: str, tenantid: str) -> list:
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/res/datasource/sqoopQueryType?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = {"timestamp": timestamp}
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            list_dbtype = []
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            res = json.loads(result.text)["data"]
-            for i in res:
+        workSpaceEnriry = response["table"][0]["workSpaceEntity"]
+        name = workSpaceEnriry["name"]
+        id = workSpaceEnriry["id"]
+        workspaces[id] = name
+        return workspaces
+    
+    @api_request("POST","/dehoop-admin/res/datasource/sqoopQueryType","获取资源类型接口")
+    def GetResourceType(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None) -> list:
+        res = response["data"]
+        list_dbtype = []
+        for i in res:
                 list_dbtype.append(i["type"])
-            return list_dbtype
-        except Exception as e:
-            logger.error(f"请求失败,错误信息:{e}")
-            return None
-
+        return list_dbtype
+    
     def GetDBResourceId(
         self, token: str, projectid: str, tenantid: str, param: ParamDBInfo
     ) -> dict:
@@ -329,161 +279,46 @@ class PublicConfig(BaseModule):
         except Exception as e:
             logger.error(f"请求失败,错误信息:{e}")
             return None
-
-    def GetSpacesInfo(self, token: str, projectid: str, tenantid: str) -> dict:
-        timestamp = int(time.time())
-
-        url = f"{self.base_url}/dehoop-admin/pro/env/query?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = {"projectId": projectid}
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            dict_spaces = {}
-            for data in json.loads(result.text)["data"]:
-                id = data["businessUnit"]["id"]
-                name = data["businessUnit"]["name"]
-                dict_spaces[name] = id
-            return dict_spaces
-        except Exception as e:
-            logger.error(f"请求失败,错误信息:{e}")
-            return None
-
-    def GetDataFields(self, token: str, projectid: str, tenantid: str) -> dict:
-        timestamp = int(time.time())
-
-        url = f"{self.base_url}/dehoop-admin/dataField/queryModelingDataField?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = {}
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            dict_Field = {}
-            for data in json.loads(result.text)["data"]:
-                id = data["id"]
-                name = data["nameCn"]
-                dict_Field[name] = id
-            return dict_Field
-        except Exception as e:
-            logger.error(f"请求失败,错误信息:{e}")
-            return None
    
-    def GetBusinessProcesses(self, token: str, projectid: str, tenantid: str,dataField:str) -> dict:
-        timestamp = int(time.time())
+    @api_request("POST","/dehoop-admin/pro/env/query","获取存储空间域接口")
+    def GetSpacesInfo(self, token: str, projectid: str, tenantid: str, param:BaseStruct,response=None) -> dict:
+        dict_spaces = {}
+        for data in response["data"]:
+            id = data["businessUnit"]["id"]
+            name = data["businessUnit"]["name"]
+            dict_spaces[name] = id
+        return dict_spaces
+    
+    @api_request("POST","/dehoop-admin/dataField/queryModelingDataField","获取数据数据域接口")
+    def GetDataFields(self, token: str, projectid: str, tenantid: str, param:BaseStruct,response=None) -> dict:
+        dict_Field = {}
+        for data in response["data"]:
+            id = data["id"]
+            name = data["nameCn"]
+            dict_Field[name] = id
+        return dict_Field
 
-        url = f"{self.base_url}/dehoop-admin/businessProcess/queryBusinessProcess?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
+    @api_request("GET","/dehoop-admin/daq/datalayer/queryDatalayers","获取数据分层接口")
+    def GetDataLayers(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None) -> dict:
+        dict_Field = {}
+        for data in response["data"]:
+            id = data["id"]
+            shortName = data["engSimpleName"]
+            name = data["name"]
+            dict_Field[shortName] = {"id": id, "name": name}
+        return dict_Field
 
-        json_p = { "dataField":dataField}
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            dict_Field = {}
-            for data in json.loads(result.text)["table"]:
-                id = data["id"]
-                name = data["nameCn"]
-                dict_Field[name] = id
-            return dict_Field
-        except Exception as e:
-            logger.error(f"请求失败,错误信息:{e}")
-            return None
-         
-    def GetDataLayers(self, token: str, projectid: str, tenantid: str) -> dict:
-        timestamp = int(time.time())
-
-        url = f"{self.base_url}/dehoop-admin/daq/datalayer/queryDatalayers?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "GET"
-        logger.debug(self.url)
-
-        json_p = { "projectId":projectid}
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            dict_Field = {}
-            for data in json.loads(result.text)["data"]:
-                id = data["id"]
-                shortName = data['engSimpleName']
-                name = data["name"]
-                dict_Field[shortName] = {'id':id,"name":name}
-            return dict_Field
-        except Exception as e:
-            logger.error(f"请求失败,错误信息:{e}")
-            return None
-
-
+    @api_request("POST","/dehoop-admin/businessProcess/queryBusinessProcess","获取业务过程接口")
+    def GetBusinessProcesses(self, token: str, projectid: str, tenantid: str, param:BaseStruct,response=None):
+        dict_Field = {}
+      
+        for data in response["table"]:
+            id = data["id"]
+            name = data["nameCn"]
+            dict_Field[name] = id
+        
+        return dict_Field
+    
 SAVE_SUCCESS = "保存成功"
 DELETE_SUCCESS = "删除成功"
 OPERATION_SUCCESS = "操作成功"
@@ -885,89 +720,39 @@ class ModelBuilder(BaseModule):
         url = f"{base_url}/"
         super().__init__(url, self.request_type)
 
-    def CreateEntity(self,token: str, projectid: str, tenantid: str,params:ParamDimension):
-        """创建公共维度\n
-        参数：
-        token(str):     登入后获取的token
-        projectid(str): 项目ID
-        tenantid(str):  登入后获取的tenantid
-        param(ParamDDLWork): DDL作业所需参数
-        """
+    @api_request("POST","/dehoop-admin/job/outlinework/work","创建业务实体接口")
+    def CreateEntity(
+        self, token: str, projectid: str, tenantid: str, params: ParamDimension
+    ):
+      pass
         
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/outlinework/work?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
+    @api_request("POST","/dehoop-admin/modelingDataDimension/addDataDimension","创建公共维度接口")
+    def CreateDimension(
+        self, token: str, projectid: str, tenantid: str, params: ParamDimension,response
+    ) -> str:
+       
+        id = response["data"]["id"]
+        return id
+    
+    @api_request("PUT","/dehoop-admin/modelingDataDimension/updateDataDimension","创建公共维度接口")
+    def UpdateDimension(
+        self, token: str, projectid: str, tenantid: str, params: ParamDimension,response
+    ) -> str:
+        id = response["data"]["id"]
+        return id
 
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
+    @api_request("DELETE","/dehoop-admin/modelingDataDimension/deleteDataDimension","删除公共维度")
+    def DeleteDimension(
+        self, token: str, projectid: str, tenantid: str, params:BaseStruct,response
+    ) -> str:
+        id = response["data"]["id"]
+        return id
+    
+    @api_request("DELETE","/dehoop-admin/modelingDataDimension/saveField","保存公共维度字段信息")
+    def DeleteDimension(
+        self, token: str, projectid: str, tenantid: str, params:BaseStruct,response
+    ) -> bool:
+        if SAVE_SUCCESS == response["message"]:
+            return True
+        return False
 
-        json_p = params.to_dict()
-        logger.info("发送创建DDL工作请求中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            logger.warning(f"返回结果为空！！！")
-            return None
-        try:
-            id = json.loads(result.text)["data"]["id"]
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.info(f"返回该作业id: {id}")
-            logger.debug(f"返回结果: \n {result.text}")
-            return id
-        except Exception as e:
-            logger.error(f"创建DDL作业失败,错误信息:{e}")
-            return None
-
-
-    def CreateDimension(self, token: str, projectid: str, tenantid: str, params:ParamDimension)->str:
-        """创建公共维度\n
-        参数：
-        token(str):     登入后获取的token
-        projectid(str): 项目ID
-        tenantid(str):  登入后获取的tenantid
-        param(ParamDDLWork): DDL作业所需参数
-        
-        返回：
-        id:             创建维度生成的ID
-        """
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/modelingDataDimension/addDataDimension?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        json_p = params.to_dict()
-        logger.info("发送创建DDL工作请求中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            logger.warning(f"返回结果为空！！！")
-            return None
-        try:
-            id = json.loads(result.text)["data"]["id"]
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.info(f"返回该作业id: {id}")
-            logger.debug(f"返回结果: \n {result.text}")
-            return id
-        except Exception as e:
-            logger.error(f"创建DDL作业失败,错误信息:{e}")
-            return None
