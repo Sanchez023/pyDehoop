@@ -1,6 +1,6 @@
 from log import logger
 import socket
-from Module import LoginModule, PublicConfig, DataDevelopment
+from Module import LoginModule, PublicConfig, DataDevelopment,ModelBuilder
 from ParamStruct import (
     ParamOutLineWork,
     ParamDDLContent,
@@ -8,6 +8,7 @@ from ParamStruct import (
     ParamDBInfo,
     ParamColumnGet,
     ParamSyncJob,
+    ParamDimension,
 )
 from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
 from typing import Literal
@@ -482,3 +483,80 @@ class Dehoop(Root):
             return res
         else:
             return None
+
+
+    def GetSpacesInfo(self,projectName:str)->dict[str,str]:
+        if self.projects is None:
+            logger.warning("未获取到项目信息，正在获取项目")
+            self.QueryProject()
+        projectid: str = self.projects[projectName][0]
+        
+        res = PublicConfig(self.request_url).GetSpacesInfo(
+            self.token, projectid, self.tenantid,
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到储存空间信息")
+            return None
+        
+    def GetDataFields(self,projectName:str)->dict[str,str]:
+        if self.projects is None:
+            logger.warning("未获取到项目信息，正在获取项目")
+            self.QueryProject()
+        projectid: str = self.projects[projectName][0]
+        
+        res = PublicConfig(self.request_url).GetDataFields(
+            self.token, projectid, self.tenantid
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到数据域信息")
+            return None
+        
+    def GetDataLayers(self,projectName:str)->dict[str,str]:
+        if self.projects is None:
+            logger.warning("未获取到项目信息，正在获取项目")
+            self.QueryProject()
+        projectid: str = self.projects[projectName][0]
+        
+        res = PublicConfig(self.request_url).GetDataLayers(
+            self.token, projectid, self.tenantid
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到数据分层信息")
+            return None
+        
+    def GetBusinessProcesses(self,projectName:str,dataFieldId:str)->dict[str,str]:
+        if self.projects is None:
+            logger.warning("未获取到项目信息，正在获取项目")
+            self.QueryProject()
+        projectid: str = self.projects[projectName][0]
+        
+        res = PublicConfig(self.request_url).GetBusinessProcesses(
+            self.token, projectid, self.tenantid,dataFieldId
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
+        
+    def CreateDimension(self,projectName:str,params:ParamDimension):
+        if self.projects is None:
+            logger.warning("未获取到项目信息，正在获取项目")
+            self.QueryProject()
+        projectid: str = self.projects[projectName][0]
+        params.projectId = projectid
+        res =  ModelBuilder(self.request_url).CreateDimension(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
+        

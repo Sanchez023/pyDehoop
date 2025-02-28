@@ -201,3 +201,29 @@ class ParamSyncJob(BaseStruct):
             "fromDataListPath": None,
             "toDataListPath": None,
         }
+
+
+class ParamDimension(BaseStruct):
+    def __init__(
+        self,
+        name: str,
+        tableName: str,
+        granularity: Literal["ATOMIC_TRANSACTIONS", "PERIODIC_SNAPSHOT"],
+        descr: str,
+        dataFieldId: str,
+        dataLayerId: str,
+        memorySpaceId: str,
+        projectId: str=None,
+        type: str = "GENERAL",
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.name = name
+        self.tableName = tableName
+        self.granularity = granularity
+        self.descr = descr
+        self.dataFieldId = dataFieldId
+        self.dataLayerId = dataLayerId
+        self.type = type
+        self.memorySpaceId = memorySpaceId
+        self.projectId = projectId

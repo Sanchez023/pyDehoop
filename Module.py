@@ -1,4 +1,12 @@
-from ParamStruct import ParamOutLineWork, ParamDDLContent,ParamFlink,ParamDBInfo,ParamColumnGet,ParamSyncJob
+from ParamStruct import (
+    ParamOutLineWork,
+    ParamDDLContent,
+    ParamFlink,
+    ParamDBInfo,
+    ParamColumnGet,
+    ParamSyncJob,
+    ParamDimension,
+)
 
 from hashlib import md5
 from log import logger
@@ -64,7 +72,10 @@ class BaseModule:
                     return result
             elif self.request_type == "DELETE":
                 result = requests.delete(
-                    url=self.url, data=json.dumps(kwargs["json_p"]), headers=headers, verify=False
+                    url=self.url,
+                    data=json.dumps(kwargs["json_p"]),
+                    headers=headers,
+                    verify=False,
                 )
                 return result
             else:
@@ -85,7 +96,7 @@ class LoginModule(BaseModule):
         url = f"{base_url}/dehoop-admin/fnd/user/login?"
         super().__init__(url, self.request_type)
 
-    def login(self, username, passwd) -> tuple[str, str,str]:
+    def login(self, username, passwd) -> tuple[str, str, str]:
         """登入方法\n
         参数：
         username(str):  登入账号
@@ -167,11 +178,11 @@ class PublicConfig(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
+
         json_p = {"searchWord": "", "page": 1, "pageSize": 2147483646}
 
         logger.info("发送查询项目请求中...")
-        
+
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
 
@@ -240,18 +251,15 @@ class PublicConfig(BaseModule):
             logger.error(f"查询工作空间失败,错误信息:{e}")
             return None
 
-    
-    def GetResourceType(self,token:str,projectid:str,tenantid:str)->list:
+    def GetResourceType(self, token: str, projectid: str, tenantid: str) -> list:
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/res/datasource/sqoopQueryType?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-     
-        json_p = {
-            'timestamp':timestamp
-        }
-        
+
+        json_p = {"timestamp": timestamp}
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -259,13 +267,12 @@ class PublicConfig(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        
-        result = self.send(headers,json_p = json_p)
+
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
@@ -274,15 +281,17 @@ class PublicConfig(BaseModule):
             logger.debug(f"返回结果: \n {result.text}")
             res = json.loads(result.text)["data"]
             for i in res:
-                list_dbtype.append(i['type'])
+                list_dbtype.append(i["type"])
             return list_dbtype
         except Exception as e:
             logger.error(f"请求失败,错误信息:{e}")
-            return None   
+            return None
 
-    def GetDBResourceId(self,token:str,projectid:str,tenantid:str,param:ParamDBInfo)->dict:
+    def GetDBResourceId(
+        self, token: str, projectid: str, tenantid: str, param: ParamDBInfo
+    ) -> dict:
         timestamp = int(time.time())
-       
+
         if bool(param.isInnerType):
             url = f"{self.base_url}/dehoop-admin/pro/env/queryInnerDataSource?timestamp={timestamp}"
         else:
@@ -290,9 +299,9 @@ class PublicConfig(BaseModule):
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-     
+
         json_p = param.to_dict()
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -300,13 +309,12 @@ class PublicConfig(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        
-        result = self.send(headers,json_p = json_p)
+
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
@@ -314,19 +322,173 @@ class PublicConfig(BaseModule):
             logger.debug(f"返回结果: \n {result.text}")
             dict_db = {}
             for enty in json.loads(result.text)["data"]:
-                id = enty['datasourceEntity']['id']
-                name = enty['datasourceEntity']['name']
+                id = enty["datasourceEntity"]["id"]
+                name = enty["datasourceEntity"]["name"]
                 dict_db[id] = name
             return dict_db
         except Exception as e:
             logger.error(f"请求失败,错误信息:{e}")
-            return None   
+            return None
+
+    def GetSpacesInfo(self, token: str, projectid: str, tenantid: str) -> dict:
+        timestamp = int(time.time())
+
+        url = f"{self.base_url}/dehoop-admin/pro/env/query?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "POST"
+        logger.debug(self.url)
+
+        json_p = {"projectId": projectid}
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        logger.info("请求发送中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            return None
+        try:
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.debug(f"返回结果: \n {result.text}")
+            dict_spaces = {}
+            for data in json.loads(result.text)["data"]:
+                id = data["businessUnit"]["id"]
+                name = data["businessUnit"]["name"]
+                dict_spaces[name] = id
+            return dict_spaces
+        except Exception as e:
+            logger.error(f"请求失败,错误信息:{e}")
+            return None
+
+    def GetDataFields(self, token: str, projectid: str, tenantid: str) -> dict:
+        timestamp = int(time.time())
+
+        url = f"{self.base_url}/dehoop-admin/dataField/queryModelingDataField?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "POST"
+        logger.debug(self.url)
+
+        json_p = {}
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        logger.info("请求发送中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            return None
+        try:
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.debug(f"返回结果: \n {result.text}")
+            dict_Field = {}
+            for data in json.loads(result.text)["data"]:
+                id = data["id"]
+                name = data["nameCn"]
+                dict_Field[name] = id
+            return dict_Field
+        except Exception as e:
+            logger.error(f"请求失败,错误信息:{e}")
+            return None
+   
+    def GetBusinessProcesses(self, token: str, projectid: str, tenantid: str,dataField:str) -> dict:
+        timestamp = int(time.time())
+
+        url = f"{self.base_url}/dehoop-admin/businessProcess/queryBusinessProcess?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "POST"
+        logger.debug(self.url)
+
+        json_p = { "dataField":dataField}
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        logger.info("请求发送中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            return None
+        try:
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.debug(f"返回结果: \n {result.text}")
+            dict_Field = {}
+            for data in json.loads(result.text)["table"]:
+                id = data["id"]
+                name = data["nameCn"]
+                dict_Field[name] = id
+            return dict_Field
+        except Exception as e:
+            logger.error(f"请求失败,错误信息:{e}")
+            return None
+         
+    def GetDataLayers(self, token: str, projectid: str, tenantid: str) -> dict:
+        timestamp = int(time.time())
+
+        url = f"{self.base_url}/dehoop-admin/daq/datalayer/queryDatalayers?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "GET"
+        logger.debug(self.url)
+
+        json_p = { "projectId":projectid}
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        logger.info("请求发送中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            return None
+        try:
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.debug(f"返回结果: \n {result.text}")
+            dict_Field = {}
+            for data in json.loads(result.text)["data"]:
+                id = data["id"]
+                shortName = data['engSimpleName']
+                name = data["name"]
+                dict_Field[shortName] = {'id':id,"name":name}
+            return dict_Field
+        except Exception as e:
+            logger.error(f"请求失败,错误信息:{e}")
+            return None
 
 
 SAVE_SUCCESS = "保存成功"
 DELETE_SUCCESS = "删除成功"
 OPERATION_SUCCESS = "操作成功"
 EXECUTE_SUCCESS = "执行成功"
+
 
 class DataDevelopment(BaseModule):
     """数据开发类\n
@@ -464,7 +626,7 @@ class DataDevelopment(BaseModule):
 
     def SaveOrUpdateDDLWork(
         self, token: str, projectid: str, tenantid: str, params: ParamDDLContent
-    )->bool:
+    ) -> bool:
         """保存DDL作业"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/outlinework/workScript?timestamp={timestamp}"
@@ -491,16 +653,14 @@ class DataDevelopment(BaseModule):
         try:
             logger.info(f"返回状态码:  {result.status_code}")
             logger.debug(f"返回结果: \n {result.text}")
-            if (SAVE_SUCCESS == str(json.loads(result.text)["message"])):
+            if SAVE_SUCCESS == str(json.loads(result.text)["message"]):
                 return True
             return None
         except Exception as e:
             logger.error(f"保存DDL作业失败,错误信息:{e}")
             return None
 
-    def DeleteDDLWork(
-        self,token:str,projectid:str,tenantid:str,id
-    )->bool:
+    def DeleteDDLWork(self, token: str, projectid: str, tenantid: str, id) -> bool:
         """删除DDL作业"""
 
         timestamp = int(time.time())
@@ -510,12 +670,10 @@ class DataDevelopment(BaseModule):
         self.url = url
         self.request_type = "DELETE"
         logger.debug(self.url)
-        
-        
-        param = ParamDDLContent(workId = id)
+
+        param = ParamDDLContent(workId=id)
         json_p = param.to_dict()
-        
-       
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -526,29 +684,29 @@ class DataDevelopment(BaseModule):
         logger.info("删除DDL作业请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers,json_p = json_p)
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
             logger.info(f"返回状态码:  {result.status_code}")
             logger.debug(f"返回结果: \n {result.text}")
-            if (DELETE_SUCCESS == str(json.loads(result.text)["message"])):
+            if DELETE_SUCCESS == str(json.loads(result.text)["message"]):
                 return True
             return None
         except Exception as e:
             logger.error(f"删除DDL作业失败,错误信息:{e}")
-            return None   
-        
-    def ExecuteTestParams(self,token:str,projectid:str,tenantid:str,param):
+            return None
+
+    def ExecuteTestParams(self, token: str, projectid: str, tenantid: str, param):
         """执行参数测试作业"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/outlinework/get/executionTestParams?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-        
+
         json_p = param.to_dict()
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -556,34 +714,35 @@ class DataDevelopment(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("运行测试参数作业请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers,json_p = json_p)
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
             logger.info(f"返回状态码:  {result.status_code}")
             logger.debug(f"返回结果: \n {result.text}")
-            if (OPERATION_SUCCESS == str(json.loads(result.text)["message"])):
+            if OPERATION_SUCCESS == str(json.loads(result.text)["message"]):
                 return True
             return None
         except Exception as e:
             logger.error(f"运行测试参数作业失败,错误信息:{e}")
-            return None   
-    
-    def ExecuteWork(self,token:str,projectid:str,tenantid:str,param:ParamOutLineWork)->str:
+            return None
+
+    def ExecuteWork(
+        self, token: str, projectid: str, tenantid: str, param: ParamOutLineWork
+    ) -> str:
         """执行DDL作业"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/outlinework/execute?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-        
+
         json_p = param.to_dict()
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -591,35 +750,36 @@ class DataDevelopment(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("执行作业请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers,json_p = json_p)
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
             logger.info(f"返回状态码:  {result.status_code}")
             logger.debug(f"返回结果: \n {result.text}")
-            if (EXECUTE_SUCCESS == str(json.loads(result.text)["message"])):
+            if EXECUTE_SUCCESS == str(json.loads(result.text)["message"]):
                 excuteId = str(json.loads(result.text)["data"]["queryExecuteId"])
                 return excuteId
             return None
         except Exception as e:
             logger.error(f"执行作业失败,错误信息:{e}")
-            return None   
-        
-    def GenerateDDL(self,token:str,projectid:str,tenantid:str,param:ParamFlink)->str:
+            return None
+
+    def GenerateDDL(
+        self, token: str, projectid: str, tenantid: str, param: ParamFlink
+    ) -> str:
         """生产DDL"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/sync/create/tableSql?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-     
+
         json_p = param.to_dict()
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -627,13 +787,12 @@ class DataDevelopment(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("建表语句请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        
-        result = self.send(headers,json_p = json_p)
+
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
@@ -642,18 +801,20 @@ class DataDevelopment(BaseModule):
             return str(json.loads(result.text)["data"]["generateSql"])
         except Exception as e:
             logger.error(f"执行建表语句请求失败,错误信息:{e}")
-            return None   
-        
-    def SaveOrUpdateSyncWork(self,token:str,projectid:str,tenantid:str,param:ParamSyncJob)->bool:
+            return None
+
+    def SaveOrUpdateSyncWork(
+        self, token: str, projectid: str, tenantid: str, param: ParamSyncJob
+    ) -> bool:
         """获取字段"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/sync/save/syncWorkConfig?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-    
+
         json_p = param.dicts
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -661,13 +822,12 @@ class DataDevelopment(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("保存语句请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        
-        result = self.send(headers,json_p = json_p)
+
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
@@ -677,17 +837,19 @@ class DataDevelopment(BaseModule):
         except Exception as e:
             logger.error(f"保存语句请求失败,错误信息:{e}")
             return None
-        
-    def GetColumnInfo(self,token:str,projectid:str,tenantid:str,param:ParamColumnGet)->list:
+
+    def GetColumnInfo(
+        self, token: str, projectid: str, tenantid: str, param: ParamColumnGet
+    ) -> list:
         """获取字段"""
         timestamp = int(time.time())
         url = f"{self.base_url}/dehoop-admin/job/sync/tableColumnInfo?timestamp={timestamp}"
         self.url = url
         self.request_type = "POST"
         logger.debug(self.url)
-     
+
         json_p = param.to_dict()
-        
+
         headers = {
             "dehooptoken": token,
             "tenantid": tenantid,
@@ -695,13 +857,12 @@ class DataDevelopment(BaseModule):
             "connection": "keep-alive",
             "content-type": "application/json",
         }
-        
-        
+
         logger.info("保存语句请求发送中...")
         logger.debug(f"头请求内容：\n {headers}")
         logger.debug(f"请求体内容：\n {json_p}")
-        
-        result = self.send(headers,json_p = json_p)
+
+        result = self.send(headers, json_p=json_p)
         if result is None:
             return None
         try:
@@ -711,4 +872,102 @@ class DataDevelopment(BaseModule):
         except Exception as e:
             logger.error(f"保存建表语句请求失败,错误信息:{e}")
             return None
-            
+
+
+class ModelBuilder(BaseModule):
+    """维度建模类\n
+    在该类下实现了对维度建模模块的部分功能"""
+
+    def __init__(self, base_url):
+        self.base_url = base_url
+        self.url = base_url
+        self.request_type = "POST"
+        url = f"{base_url}/"
+        super().__init__(url, self.request_type)
+
+    def CreateEntity(self,token: str, projectid: str, tenantid: str,params:ParamDimension):
+        """创建公共维度\n
+        参数：
+        token(str):     登入后获取的token
+        projectid(str): 项目ID
+        tenantid(str):  登入后获取的tenantid
+        param(ParamDDLWork): DDL作业所需参数
+        """
+        
+        timestamp = int(time.time())
+        url = f"{self.base_url}/dehoop-admin/job/outlinework/work?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "POST"
+        logger.debug(self.url)
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        json_p = params.to_dict()
+        logger.info("发送创建DDL工作请求中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            logger.warning(f"返回结果为空！！！")
+            return None
+        try:
+            id = json.loads(result.text)["data"]["id"]
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.info(f"返回该作业id: {id}")
+            logger.debug(f"返回结果: \n {result.text}")
+            return id
+        except Exception as e:
+            logger.error(f"创建DDL作业失败,错误信息:{e}")
+            return None
+
+
+    def CreateDimension(self, token: str, projectid: str, tenantid: str, params:ParamDimension)->str:
+        """创建公共维度\n
+        参数：
+        token(str):     登入后获取的token
+        projectid(str): 项目ID
+        tenantid(str):  登入后获取的tenantid
+        param(ParamDDLWork): DDL作业所需参数
+        
+        返回：
+        id:             创建维度生成的ID
+        """
+        timestamp = int(time.time())
+        url = f"{self.base_url}/dehoop-admin/modelingDataDimension/addDataDimension?timestamp={timestamp}"
+        self.url = url
+        self.request_type = "POST"
+        logger.debug(self.url)
+
+        headers = {
+            "dehooptoken": token,
+            "tenantid": tenantid,
+            "projectid": projectid,
+            "connection": "keep-alive",
+            "content-type": "application/json",
+        }
+
+        json_p = params.to_dict()
+        logger.info("发送创建DDL工作请求中...")
+        logger.debug(f"头请求内容：\n {headers}")
+        logger.debug(f"请求体内容：\n {json_p}")
+
+        result = self.send(headers, json_p=json_p)
+        if result is None:
+            logger.warning(f"返回结果为空！！！")
+            return None
+        try:
+            id = json.loads(result.text)["data"]["id"]
+            logger.info(f"返回状态码:  {result.status_code}")
+            logger.info(f"返回该作业id: {id}")
+            logger.debug(f"返回结果: \n {result.text}")
+            return id
+        except Exception as e:
+            logger.error(f"创建DDL作业失败,错误信息:{e}")
+            return None
