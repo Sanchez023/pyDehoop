@@ -335,30 +335,16 @@ class DataDevelopment(BaseModule):
         self.request_type = "POST"
         url = f"{base_url}/"
         super().__init__(url, self.request_type)
-
+  
+    @api_request("GET","/dehoop-admin/job/outlinework/query","查询离线作业")
     def QueryOutLineWork(
-        self, token: str, tenantid: str, projectid: str, envid: str
+        self, token: str, tenantid: str, projectid: str, param:BaseStruct,response
     ) -> tuple[dict, dict]:
-        """查询数据开发作业\n
-        参数：
-        token(str):     登入后获取的token
-        tenantid(str):  登入后获取的tenantid
-        projectid(str): 项目ID
-        envid(str):     环境ID
 
-        返回：
-        dict_works(dict): 作业ID与作业名称的字典
-        """
-        timestamp = int(time.time())
-        url = (
-            f"{self.base_url}/dehoop-admin/job/outlinework/query?timestamp={timestamp}"
-        )
-        self.url = url
-        self.request_type = "GET"
-
-        dict_works = {}
+      
         dict_parent = {}
-
+        dict_works = {}
+        
         def FindChildV2(child_work: list, parent: str, topid: str):
             """递归查找子节点2\n
             参数：
@@ -376,337 +362,72 @@ class DataDevelopment(BaseModule):
                 if work["child"]:
                     FindChildV2(work["child"], work["id"], topid)
 
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        json_p = {
-            "projectId": projectid,
-            "envId": envid,
-        }
-
-        logger.info("发送查询数据开发作业请求中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        logger.info(f"返回状态码:  {result.status_code}")
-        logger.debug(f"返回结果: \n {result.text}")
-
-        try:
-            dict_works = {}
-            for work in json.loads(result.text)["data"]:
+        for work in response["data"]:
+            dict_works[work["id"]] = work["name"]
+            if work["child"]:
                 dict_works[work["id"]] = work["name"]
+                dict_parent[work["id"]] = work["id"]
+                FindChildV2(work["child"], work["id"], work["id"])
+        
+        logger.debug(f"作业信息：{dict_works}")
 
-                if work["child"]:
-
-                    dict_works[work["id"]] = work["name"]
-                    dict_parent[work["id"]] = work["id"]
-                    FindChildV2(work["child"], work["id"], work["id"])
-            logger.debug(f"作业信息：{dict_works}")
-
-            return dict_works, dict_parent
-        except Exception as e:
-            logger.error(f"查询数据开发作业失败,错误信息:{e}")
-            return None
-
+        return dict_works, dict_parent
+      
+    @api_request("POST","/dehoop-admin/job/outlinework/work","创建DDL作业")
     def CreateDDLWork(
-        self, token: str, projectid: str, tenantid: str, params: ParamOutLineWork
+        self, token: str, projectid: str, tenantid: str, params: ParamOutLineWork,response=None
     ) -> str:
-        """创建DDL工作\n
-        参数：
-        token(str):     登入后获取的token
-        projectid(str): 项目ID
-        tenantid(str):  登入后获取的tenantid
-        param(ParamDDLWork): DDL作业所需参数
-        """
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/outlinework/work?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        json_p = params.to_dict()
-        logger.info("发送创建DDL工作请求中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            logger.warning(f"返回结果为空！！！")
-            return None
-        try:
-            id = json.loads(result.text)["data"]["id"]
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.info(f"返回该作业id: {id}")
-            logger.debug(f"返回结果: \n {result.text}")
-            return id
-        except Exception as e:
-            logger.error(f"创建DDL作业失败,错误信息:{e}")
-            return None
-
+        id = response["data"]["id"]
+        logger.info(f"返回该作业id: {id}")
+        return id
+     
+    @api_request("POST","/dehoop-admin/job/outlinework/workScript","保存DDL作业")
     def SaveOrUpdateDDLWork(
-        self, token: str, projectid: str, tenantid: str, params: ParamDDLContent
+        self, token: str, projectid: str, tenantid: str, params: ParamDDLContent,response=None
     ) -> bool:
-        """保存DDL作业"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/outlinework/workScript?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        json_p = params.to_dict()
-        logger.info("保存更新DDL作业请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            if SAVE_SUCCESS == str(json.loads(result.text)["message"]):
-                return True
-            return None
-        except Exception as e:
-            logger.error(f"保存DDL作业失败,错误信息:{e}")
-            return None
-
-    def DeleteDDLWork(self, token: str, projectid: str, tenantid: str, id) -> bool:
-        """删除DDL作业"""
-
-        timestamp = int(time.time())
-        url = (
-            f"{self.base_url}//dehoop-admin/job/outlinework/work?timestamp={timestamp}"
-        )
-        self.url = url
-        self.request_type = "DELETE"
-        logger.debug(self.url)
-
-        param = ParamDDLContent(workId=id)
-        json_p = param.to_dict()
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-        logger.info("删除DDL作业请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            if DELETE_SUCCESS == str(json.loads(result.text)["message"]):
-                return True
-            return None
-        except Exception as e:
-            logger.error(f"删除DDL作业失败,错误信息:{e}")
-            return None
-
-    def ExecuteTestParams(self, token: str, projectid: str, tenantid: str, param):
-        """执行参数测试作业"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/outlinework/get/executionTestParams?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = param.to_dict()
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("运行测试参数作业请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            if OPERATION_SUCCESS == str(json.loads(result.text)["message"]):
-                return True
-            return None
-        except Exception as e:
-            logger.error(f"运行测试参数作业失败,错误信息:{e}")
-            return None
-
-    def ExecuteWork(
-        self, token: str, projectid: str, tenantid: str, param: ParamOutLineWork
-    ) -> str:
-        """执行DDL作业"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/outlinework/execute?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = param.to_dict()
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("执行作业请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            if EXECUTE_SUCCESS == str(json.loads(result.text)["message"]):
-                excuteId = str(json.loads(result.text)["data"]["queryExecuteId"])
-                return excuteId
-            return None
-        except Exception as e:
-            logger.error(f"执行作业失败,错误信息:{e}")
-            return None
-
-    def GenerateDDL(
-        self, token: str, projectid: str, tenantid: str, param: ParamFlink
-    ) -> str:
-        """生产DDL"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/sync/create/tableSql?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = param.to_dict()
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("建表语句请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            return str(json.loads(result.text)["data"]["generateSql"])
-        except Exception as e:
-            logger.error(f"执行建表语句请求失败,错误信息:{e}")
-            return None
-
-    def SaveOrUpdateSyncWork(
-        self, token: str, projectid: str, tenantid: str, param: ParamSyncJob
-    ) -> bool:
-        """获取字段"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/sync/save/syncWorkConfig?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = param.dicts
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("保存语句请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
+        if SAVE_SUCCESS == response["message"]:
             return True
-        except Exception as e:
-            logger.error(f"保存语句请求失败,错误信息:{e}")
-            return None
+        return None
 
+    @api_request("DELETE","/dehoop-admin/job/outlinework/work","删除DDL作业")
+    def DeleteDDLWork(self, token: str, projectid: str, tenantid: str, param:BaseStruct,response=None) -> bool:
+        if DELETE_SUCCESS == response["message"]:
+            return True
+        return None
+      
+    @api_request("POST","/dehoop-admin/job/outlinework/get/executionTestParams","执行参数测试接口")
+    def ExecuteTestParams(self, token: str, projectid: str, tenantid: str, param,response:None):
+        if OPERATION_SUCCESS == response["message"]:
+            return True
+        return None
+
+    @api_request("POST","/dehoop-admin/job/outlinework/execute","执行DDL作业接口")
+    def ExecuteWork(
+        self, token: str, projectid: str, tenantid: str, param: ParamOutLineWork,response:None
+    ) -> str:
+        if EXECUTE_SUCCESS == response["message"]:
+            excuteId = response["data"]["queryExecuteId"]
+            return excuteId
+        return None
+       
+    @api_request("POST","/dehoop-admin/job/sync/create/tableSql","生成DDL语句接口")
+    def GenerateDDL(
+        self, token: str, projectid: str, tenantid: str, param: ParamFlink,response=None
+    ) -> str:
+        return response["data"]["generateSql"]
+       
+    @api_request("POST","/dehoop-admin/job/sync/save/syncWorkConfig","保存同步作业接口")
+    def SaveOrUpdateSyncWork(
+        self, token: str, projectid: str, tenantid: str, param: ParamSyncJob,response:None
+    ) -> bool:
+        return True
+
+    @api_request("POST","/dehoop-admin/job/sync/tableColumnInfo","获取字段接口")
     def GetColumnInfo(
-        self, token: str, projectid: str, tenantid: str, param: ParamColumnGet
+        self, token: str, projectid: str, tenantid: str, param: ParamColumnGet,response=None
     ) -> list:
-        """获取字段"""
-        timestamp = int(time.time())
-        url = f"{self.base_url}/dehoop-admin/job/sync/tableColumnInfo?timestamp={timestamp}"
-        self.url = url
-        self.request_type = "POST"
-        logger.debug(self.url)
-
-        json_p = param.to_dict()
-
-        headers = {
-            "dehooptoken": token,
-            "tenantid": tenantid,
-            "projectid": projectid,
-            "connection": "keep-alive",
-            "content-type": "application/json",
-        }
-
-        logger.info("保存语句请求发送中...")
-        logger.debug(f"头请求内容：\n {headers}")
-        logger.debug(f"请求体内容：\n {json_p}")
-
-        result = self.send(headers, json_p=json_p)
-        if result is None:
-            return None
-        try:
-            logger.info(f"返回状态码:  {result.status_code}")
-            logger.debug(f"返回结果: \n {result.text}")
-            return json.loads(result.text)["data"]["tableColumnInfos"]
-        except Exception as e:
-            logger.error(f"保存建表语句请求失败,错误信息:{e}")
-            return None
+        return response["data"]["tableColumnInfos"]
+     
 
 
 class ModelBuilder(BaseModule):
@@ -748,8 +469,8 @@ class ModelBuilder(BaseModule):
         id = response["data"]["id"]
         return id
     
-    @api_request("DELETE","/dehoop-admin/modelingDataDimension/saveField","保存公共维度字段信息")
-    def DeleteDimension(
+    @api_request("POST","/dehoop-admin/modelingDataDimension/saveField","保存公共维度字段信息")
+    def SaveDimensionField(
         self, token: str, projectid: str, tenantid: str, params:BaseStruct,response
     ) -> bool:
         if SAVE_SUCCESS == response["message"]:

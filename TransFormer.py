@@ -1,9 +1,9 @@
 from uuid import uuid4
+
 def generateUUid(isHyphen:bool=True):
     if isHyphen:
         return uuid4().__str__()
     return uuid4().hex
-
 
 def Transerfrom_addColumn(origin_list:list[dict],tableName):
     addColumns = []
@@ -14,8 +14,6 @@ def Transerfrom_addColumn(origin_list:list[dict],tableName):
         addColumns.append(dict_column)
     
     return addColumns
-
-
 
 def Transerfrom_mappingList(origin_list:list[dict],fromTable:str,toTableName:str):
     mappingList =[]

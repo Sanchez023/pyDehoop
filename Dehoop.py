@@ -92,6 +92,7 @@ class Dehoop(Root):
                 logger.info("登入成功")
                 logger.info(f"token:{self.token}")
                 logger.info(f"tenantid:{self.tenantid}")
+                logger.info(f"userId:{self.userId}")
             return True
         else:
             logger.error("登入失败")
@@ -163,9 +164,10 @@ class Dehoop(Root):
 
         projectid: str = self.projects[projectName][0]
         envid: str = self.projects[projectName][1]
+        p = BaseStruct( projectId =  projectid,envId =  envid)
         self.c_prjdir, self.c_nodeMatch = DataDevelopment(
             self.request_url
-        ).QueryOutLineWork(self.token, self.tenantid, projectid, envid)
+        ).QueryOutLineWork(self.token, self.tenantid, projectid, p)
 
         if self.c_prjdir is not None:
             logger.info("查询离线作业成功")
@@ -225,8 +227,9 @@ class Dehoop(Root):
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
         projectid: str = self.projects[projectName][0]
+        p = BaseStruct(id = id)
         res = DataDevelopment(self.request_url).DeleteDDLWork(
-            self.token, projectid, self.tenantid, id
+            self.token, projectid, self.tenantid,p
         )
         if res:
             logger.info(f"删除'{id}'作业成功！")

@@ -58,6 +58,7 @@ def ReplaceKeyWords_spark(tableName:str):
         s = f.read()     
         s = s.replace("{{TABLENAME}}",tableName)
     return s 
+
 def ReplaceKeyWords_sparkv2(tableName:str,partition:str,joins:str):
     path = "./DDL/sparkSql_model.sql"
     with open(path,"r",encoding="utf-8") as f:
