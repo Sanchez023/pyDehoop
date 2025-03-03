@@ -9,6 +9,7 @@ from ParamStruct import (
     ParamColumnGet,
     ParamSyncJob,
     ParamDimension,
+    ParamEntitry,
     BaseStruct
 )
 from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
@@ -535,8 +536,9 @@ class Dehoop(Root):
             return None
         
     @PreQueryProject     
-    def GetBusinessProcesses(self,projectName:str,dataFieldId:str)->dict[str,str]:
+    def GetBusinessProcesses(self,projectName:str)->dict[str,str]:
         projectid: str = self.projects[projectName][0]
+        dataFieldId:str = self.projects[projectName][2]
         param = BaseStruct(dataField = dataFieldId)
         res = PublicConfig(self.request_url).GetBusinessProcesses(
             self.token, projectid, self.tenantid,param
@@ -550,7 +552,9 @@ class Dehoop(Root):
     @PreQueryProject      
     def CreateDimension(self,projectName:str,params:ParamDimension):
         projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
         params.projectId = projectid
+        params.dataFieldId = dataFieldId
         res =  ModelBuilder(self.request_url).CreateDimension(
             self.token, projectid, self.tenantid,params
         )
@@ -563,7 +567,9 @@ class Dehoop(Root):
     @PreQueryProject   
     def UpdateDimension(self,projectName:str,params:ParamDimension):
         projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
         params.projectId = projectid
+        params.dataFieldId = dataFieldId
         res =  ModelBuilder(self.request_url).UpdateDimension(
             self.token, projectid, self.tenantid,params
         )
@@ -614,3 +620,45 @@ class Dehoop(Root):
             logger.warning("未能保存公共维度字段程信息")
             return None
     
+    @PreQueryProject      
+    def CreateEntity(self,projectName:str,params:ParamEntitry):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res =  ModelBuilder(self.request_url).CreateEntity(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务实体信息")
+            return None
+     
+    @PreQueryProject   
+    def UpdateEntity(self,projectName:str,params:ParamEntitry):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res =  ModelBuilder(self.request_url).UpdateEntity(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务实体信息")
+            return None
+        
+    @PreQueryProject
+    def DeleteEntity(self,projectName:str,id:str):
+        projectid: str = self.projects[projectName][0]
+        params = BaseStruct(id=id)
+        res =  ModelBuilder(self.request_url).DeleteEntity(
+            self.token, projectid, self.tenantid,params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务实体信息")
+            return None

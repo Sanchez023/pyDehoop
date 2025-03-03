@@ -212,9 +212,9 @@ class ParamDimension(BaseStruct):
         tableName: str,
         granularity: Literal["ATOMIC_TRANSACTIONS", "PERIODIC_SNAPSHOT"],
         descr: str,
-        dataFieldId: str,
         dataLayerId: str,
         memorySpaceId: str,
+        dataFieldId: str=None,
         projectId: str=None,
         type: str = "GENERAL",
         **kwargs
@@ -230,3 +230,32 @@ class ParamDimension(BaseStruct):
         self.memorySpaceId = memorySpaceId
         self.projectId = projectId
         self.id  = kwargs.get("id",None)
+        
+class ParamEntitry(BaseStruct):
+    def __init__(
+        self,
+        name: str,
+        tableName: str,
+        granularity: Literal["ATOMIC_TRANSACTIONS", "PERIODIC_SNAPSHOT"],
+        descr: str,
+        dataLayerId: str,
+        memorySpaceId: str,
+        dataFieldId: str=None,
+        projectId: str=None,
+        type: str = "GENERAL",
+        businessType:str=None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.name = name
+        self.tableName = tableName
+        self.granularity = granularity
+        self.descr = descr
+        self.dataFieldId = dataFieldId
+        self.dataLayerId = dataLayerId
+        self.type = type
+        self.memorySpaceId = memorySpaceId
+        self.projectId = projectId
+        self.id  = kwargs.get("id","")
+        self.businessProcessId = businessType
+

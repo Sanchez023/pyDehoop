@@ -6,6 +6,7 @@ from ParamStruct import (
     ParamColumnGet,
     ParamSyncJob,
     ParamDimension,
+    ParamEntitry,
     BaseStruct
 )
 
@@ -217,7 +218,7 @@ class PublicConfig(BaseModule):
             logger.info(
                 f"项目名称:{i['projectName']},项目ID:{i['projectId']},环境ID:{i['envId']}"
             )
-            dict_prj[i["projectName"]] = (i["projectId"], i["envId"])
+            dict_prj[i["projectName"]] = (i["projectId"], i["envId"],i["dataFieldId"])
         return dict_prj
     
     @api_request("POST","/dehoop-admin/pro/env/pageQueryWorkspace","查询工作空间接口")
@@ -446,12 +447,28 @@ class ModelBuilder(BaseModule):
         url = f"{base_url}/"
         super().__init__(url, self.request_type)
 
-    @api_request("POST","/dehoop-admin/job/outlinework/work","创建业务实体接口")
+    @api_request("POST","/dehoop-admin/modeling/saveEntityBasic","创建业务实体接口")
     def CreateEntity(
-        self, token: str, projectid: str, tenantid: str, params: ParamDimension
+        self, token: str, projectid: str, tenantid: str, params: ParamEntitry,response
     ):
-      pass
-        
+        id = response["data"]["id"]
+        return id
+    
+    @api_request("DELETE","/dehoop-admin/modeling/deleteEntity","删除业务实体接口")
+    def DeleteEntity(
+        self, token: str, projectid: str, tenantid: str, params:BaseStruct,response
+    ):
+        if SAVE_SUCCESS == response["message"]: 
+            return True
+        return False
+      
+    @api_request("POST","/dehoop-admin/modeling/saveEntityBasic","更新业务实体接口")
+    def UpdateEntity(
+        self, token: str, projectid: str, tenantid: str, params: ParamEntitry,response
+    ):
+        id = response["data"]["id"]
+        return id
+  
     @api_request("POST","/dehoop-admin/modelingDataDimension/addDataDimension","创建公共维度接口")
     def CreateDimension(
         self, token: str, projectid: str, tenantid: str, params: ParamDimension,response
@@ -460,7 +477,7 @@ class ModelBuilder(BaseModule):
         id = response["data"]["id"]
         return id
     
-    @api_request("PUT","/dehoop-admin/modelingDataDimension/updateDataDimension","创建公共维度接口")
+    @api_request("PUT","/dehoop-admin/modelingDataDimension/updateDataDimension","更新公共维度接口")
     def UpdateDimension(
         self, token: str, projectid: str, tenantid: str, params: ParamDimension,response
     ) -> str:
