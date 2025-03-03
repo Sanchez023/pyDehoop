@@ -9,7 +9,7 @@ d.token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NDM3NDExND
 d.tenantid = "642417283011969024"
 d.tenantid = "643741146048102400"
 projectName = "恒邦POT"
-dfs = pandas.read_excel("C:/Xiaomi Cloud/Desktop/book1.xlsx",sheet_name=None,header=None)
+dfs = pandas.read_excel("./File/批量建模模板.xlsx",sheet_name=None,header=None)
 
 for sheetName in dfs:
     df:DataFrame= dfs[sheetName]
@@ -22,7 +22,12 @@ for sheetName in dfs:
     data_frame = df.iloc[4:,:].reset_index(drop=True)
     data_frame.columns= colums
     # print(data_frame[0:2])
-    data_frame = data_frame[["标准字段分类","标准物理字段","主键","外键"]]
-    print(data_frame)
+    fields = {}
+    data_frame = data_frame[["标准字段分类","标准物理字段","主键","外键"]].fillna("")
+    for i in data_frame.values:
+        isPK = False if i[2] == "" else True
+        isFK = False if i[2] == "" else True
+        fields[i[1]] = {"clsName":i[0],"isPK":isPK,"isFK":isFK}
+        print(fields)
     break 
     # data_df:DataFrame = df

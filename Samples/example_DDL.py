@@ -1,7 +1,7 @@
 from Dehoop import Dehoop
 from ParamStruct import ParamOutLineWork,ParamDDLContent
 from Table import ReplaceKeyWords,ReplaceKeyWords_spark
-from TransFormer import Transerfrom_addColumn,Transerfrom_mappingList,ExtraColumn,ReMappingList
+from utils.TransFormer import Transerfrom_addColumn,Transerfrom_mappingList,ExtraColumn,ReMappingList
 
 
 import pandas as pd
@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     d = Dehoop("10.1.8.17",30104)
     # d.Login(u,passwd)
-    d.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MDY1MDgyNCwiaWF0IjoxNzQwMzkxNjI0fQ.4xeTV7RCB3D_dr7tJSDG_9UoVybxAQ7TVZwhkog0ZRB8ct7rnWLi6e3hTgIAq2hFF1g4Dhmcly-R8LDmPu-77g"
+    # d.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MDY1MDgyNCwiaWF0IjoxNzQwMzkxNjI0fQ.4xeTV7RCB3D_dr7tJSDG_9UoVybxAQ7TVZwhkog0ZRB8ct7rnWLi6e3hTgIAq2hFF1g4Dhmcly-R8LDmPu-77g"
     d.userId = '657253959764803584'
     d.tenantid = '656609118399758336'
     projectName = '中台-客户管理其他域模型开发'

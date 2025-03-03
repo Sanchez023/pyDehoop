@@ -435,8 +435,6 @@ class DataDevelopment(BaseModule):
     ) -> list:
         return response["data"]["tableColumnInfos"]
      
-
-
 class ModelBuilder(BaseModule):
     """维度建模类\n
     在该类下实现了对维度建模模块的部分功能"""
@@ -483,5 +481,3 @@ class ModelBuilder(BaseModule):
         if SAVE_SUCCESS == response["message"]:
             return True
         return False
-
-   
