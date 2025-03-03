@@ -146,6 +146,8 @@ class ParamSyncJob(BaseStruct):
     ):
         super().__init__(**kwargs)
 
+        self.to_dict = self.dicts
+        
         self.dicts = {
             "fromDbId": fromDbId,
             "fromDbTable": fromTableName,

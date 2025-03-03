@@ -1,0 +1,54 @@
+2025-03-03 15:54:09,628 - log - INFO - 发送登入请求中...
+2025-03-03 15:54:09,713 - log - INFO - 返回状态码:  200
+2025-03-03 15:54:09,713 - log - INFO - 登入成功
+2025-03-03 15:54:09,713 - log - INFO - token:eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NDM3NDExNDYwNDgxMDI0MDAiLCJ0ZW5hbnRpZCI6IjY0MjQxNzI4MzAxMTk2OTAyNCIsImV4cCI6MTc0MTI0NzQ4MSwiaWF0IjoxNzQwOTg4MjgxfQ.8IF1FmUGLCa4hAzJwKk_IRkTHHmgeAMmuwV5G3bI_6FFNoH1v10AjDrC-mq4tooX0cLVH4XkpDdenjR8L9gX8g
+2025-03-03 15:54:09,714 - log - INFO - tenantid:642417283011969024
+2025-03-03 15:54:09,714 - log - INFO - userId:643741146048102400
+2025-03-03 15:54:09,719 - log - WARNING - 未获取到项目信息，正在获取项目
+2025-03-03 15:54:09,719 - log - INFO - http://192.168.16.100:30104/dehoop-admin/pro/tabProjects?timestamp=1740988449
+2025-03-03 15:54:09,719 - log - INFO - -------------------------查询项目接口-------------------------
+2025-03-03 15:54:09,719 - log - INFO - 请求发送中...
+2025-03-03 15:54:09,767 - log - INFO - 返回状态码:  200
+2025-03-03 15:54:09,767 - log - INFO - 项目名称:恒邦POT,项目ID:643765953825341440,环境ID:643766293589131264
+2025-03-03 15:54:09,767 - log - INFO - 项目名称:API项目,项目ID:649935401082945536,环境ID:649936207970566144
+2025-03-03 15:54:09,767 - log - INFO - 查询项目成功
+2025-03-03 15:54:09,767 - log - INFO - http://192.168.16.100:30104/dehoop-admin/pro/env/query?timestamp=1740988449
+2025-03-03 15:54:09,767 - log - INFO - -------------------------获取存储空间域接口-------------------------
+2025-03-03 15:54:09,767 - log - INFO - 请求发送中...
+2025-03-03 15:54:09,805 - log - INFO - 返回状态码:  200
+2025-03-03 15:54:09,806 - log - INFO - http://192.168.16.100:30104/dehoop-admin/businessProcess/queryBusinessProcess?timestamp=1740988449
+2025-03-03 15:54:09,806 - log - INFO - -------------------------获取业务过程接口-------------------------
+2025-03-03 15:54:09,806 - log - INFO - 请求发送中...
+2025-03-03 15:54:09,887 - log - INFO - 返回状态码:  200
+2025-03-03 15:54:09,887 - log - INFO - http://192.168.16.100:30104/dehoop-admin/daq/datalayer/queryDatalayers?timestamp=1740988449
+2025-03-03 15:54:09,887 - log - INFO - -------------------------获取数据分层接口-------------------------
+2025-03-03 15:54:09,887 - log - INFO - 请求发送中...
+2025-03-03 15:54:09,934 - log - INFO - 返回状态码:  200
+2025-03-03 15:54:09,934 - log - INFO - http://192.168.16.100:30104/dehoop-admin/modelingDataDimension/addDataDimension?timestamp=1740988449
+2025-03-03 15:54:09,934 - log - INFO - -------------------------创建公共维度接口-------------------------
+2025-03-03 15:54:09,935 - log - INFO - 请求发送中...
+2025-03-03 15:54:10,171 - log - INFO - 返回状态码:  200
+2025-03-03 15:57:31,437 - log - INFO - 发送登入请求中...
+2025-03-03 15:57:31,513 - log - INFO - 返回状态码:  200
+2025-03-03 15:57:31,513 - log - INFO - 登入成功
+2025-03-03 15:57:31,514 - log - INFO - token:eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NDM3NDExNDYwNDgxMDI0MDAiLCJ0ZW5hbnRpZCI6IjY0MjQxNzI4MzAxMTk2OTAyNCIsImV4cCI6MTc0MTI0NzY4MywiaWF0IjoxNzQwOTg4NDgzfQ.52LTYjFlivhdAwFM3btM2zGljypY750j3DyK8W1v8hpIedLEkkdz-6K-7i2Yx4oh7pgDXnBLyYphRSKuppo99A
+2025-03-03 15:57:31,514 - log - INFO - tenantid:642417283011969024
+2025-03-03 15:57:31,514 - log - INFO - userId:643741146048102400
+2025-03-03 15:57:50,058 - log - INFO - 发送登入请求中...
+2025-03-03 15:57:50,149 - log - INFO - 返回状态码:  200
+2025-03-03 15:57:50,149 - log - INFO - 登入成功
+2025-03-03 15:57:50,149 - log - INFO - token:eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NDM3NDExNDYwNDgxMDI0MDAiLCJ0ZW5hbnRpZCI6IjY0MjQxNzI4MzAxMTk2OTAyNCIsImV4cCI6MTc0MTI0NzcwMiwiaWF0IjoxNzQwOTg4NTAyfQ._r7ljgATqYtbv80SKPMnd44AVzCHWPwC7p0zkuLFZ8Aat97FUzxcUefp849w102Veeyss8_UIXIYbCdM2Nau9Q
+2025-03-03 15:57:50,149 - log - INFO - tenantid:642417283011969024
+2025-03-03 15:57:50,149 - log - INFO - userId:643741146048102400
+2025-03-03 15:57:50,151 - log - WARNING - 未获取到项目信息，正在获取项目
+2025-03-03 15:57:50,151 - log - INFO - http://192.168.16.100:30104/dehoop-admin/pro/tabProjects?timestamp=1740988670
+2025-03-03 15:57:50,151 - log - INFO - -------------------------查询项目接口-------------------------
+2025-03-03 15:57:50,151 - log - INFO - 请求发送中...
+2025-03-03 15:57:50,198 - log - INFO - 返回状态码:  200
+2025-03-03 15:57:50,199 - log - INFO - 项目名称:恒邦POT,项目ID:643765953825341440,环境ID:643766293589131264
+2025-03-03 15:57:50,199 - log - INFO - 项目名称:API项目,项目ID:649935401082945536,环境ID:649936207970566144
+2025-03-03 15:57:50,199 - log - INFO - 查询项目成功
+2025-03-03 15:57:50,199 - log - INFO - http://192.168.16.100:30104/dehoop-admin/modelingDataDimension/saveField?timestamp=1740988670
+2025-03-03 15:57:50,199 - log - INFO - -------------------------保存公共维度字段信息-------------------------
+2025-03-03 15:57:50,199 - log - INFO - 请求发送中...
+2025-03-03 15:57:50,288 - log - INFO - 返回状态码:  200

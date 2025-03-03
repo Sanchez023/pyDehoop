@@ -585,3 +585,32 @@ class Dehoop(Root):
         else:
             logger.warning("未获取到业务过程信息")
             return None
+    
+    @PreQueryProject
+    def DownloadStandars(self,projectName:str):
+        projectid:str = self.projects[projectName][0]
+        p = BaseStruct()
+        res = PublicConfig(self.request_url).GetStandards(self.token,projectid,self.tenantid,p)
+        
+        if res is not None:
+            with open("./standarsInfo/data.json","w",encoding="utf-8") as f:
+                f.write(res)
+            return True
+        else:
+            logger.warning("为获取的标准字段信息")
+            return None
+    
+    @PreQueryProject
+    def SaveDimensionFields(self,projectName:str,id:str,field:list):
+        projectid:str = self.projects[projectName][0]
+        p = BaseStruct(id=id,fields=field)
+      
+        res =  ModelBuilder(self.request_url).SaveDimensionField(
+            self.token, projectid, self.tenantid,p
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未能保存公共维度字段程信息")
+            return None
+    

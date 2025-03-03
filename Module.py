@@ -104,7 +104,7 @@ def api_request(method, endpoint,descr):
             url = f"{self.base_url}{endpoint}?timestamp={timestamp}"
             self.url = url
             self.request_type = method
-            logger.debug(self.url)
+            logger.info(self.url)
 
             json_p = params.to_dict()
 
