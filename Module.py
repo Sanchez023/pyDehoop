@@ -96,6 +96,7 @@ class BaseModule:
 
 
 def api_request(method, endpoint,descr):
+    '''装饰函数\n'''
     def decorator(func):
         @wraps(func)
         def wrapper(self, token, projectid, tenantid, params:BaseStruct,response=None):
@@ -319,6 +320,12 @@ class PublicConfig(BaseModule):
         
         return dict_Field
     
+    @api_request("GET","/dehoop-admin/modelingFieldStandard/enableStandardSearch","获取字段标准信息")
+    def GetStandards(
+        self,tokne:str,projectId:str,tenantid:str,params:BaseStruct,response
+    ):
+        return json.dumps(response["data"])
+    
 SAVE_SUCCESS = "保存成功"
 DELETE_SUCCESS = "删除成功"
 OPERATION_SUCCESS = "操作成功"
@@ -477,3 +484,4 @@ class ModelBuilder(BaseModule):
             return True
         return False
 
+   
