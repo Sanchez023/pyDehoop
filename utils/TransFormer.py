@@ -195,7 +195,7 @@ def GenerateJsonFields(fields: dict[str, dict]):
     pk_flag = False
     for code in fields.keys():
         fieldInfo: dict = dict_fields[fields[code]["clsName"]][code]
-        name = fieldInfo["name"]
+        name = fields[code]["cname"]
         id = fieldInfo["id"]
         fieldType = fieldInfo["dataType"]
         precision = fieldInfo["fieldLengthValue"]
@@ -203,7 +203,7 @@ def GenerateJsonFields(fields: dict[str, dict]):
         comment = fieldInfo["descr"]
         pathName = fieldInfo["pathName"]
 
-        if fields[code]["isFK"]:
+        if fields[code]["isFK"] or fields[code]["isPK"]:
             modelRelationship = "RELATION_FIELD"
         elif fieldType == "STRING":
             modelRelationship = "ATTRIBUTE"

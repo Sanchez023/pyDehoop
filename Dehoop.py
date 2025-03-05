@@ -13,6 +13,7 @@ from ParamStruct import (
     BaseStruct
 )
 from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
+from utils.TransFormer import GenerateJsonFields
 from typing import Literal
 
 
@@ -609,7 +610,8 @@ class Dehoop(Root):
     @PreQueryProject
     def SaveDimensionFields(self,projectName:str,id:str,field:list):
         projectid:str = self.projects[projectName][0]
-        p = BaseStruct(id=id,fields=field)
+        fields = GenerateJsonFields(field)
+        p = BaseStruct(id=id,fields=fields)
       
         res =  ModelBuilder(self.request_url).SaveDimensionField(
             self.token, projectid, self.tenantid,p
@@ -661,4 +663,19 @@ class Dehoop(Root):
             return res
         else:
             logger.warning("未获取到业务实体信息")
+            return None
+    
+    @PreQueryProject
+    def SaveEntitryFields(self,projectName:str,id:str,field:list):
+        projectid:str = self.projects[projectName][0]
+        fields = GenerateJsonFields(field)
+        p = BaseStruct(id=id,fields=fields)
+      
+        res =  ModelBuilder(self.request_url).SaveeEntitryField(
+            self.token, projectid, self.tenantid,p
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未能保存公共维度字段程信息")
             return None
