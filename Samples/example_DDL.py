@@ -53,7 +53,7 @@ if __name__ == '__main__':
             case 'SYNC':
                 INPARAM = 'STG_'+system+'_' + TABLENAME+"_F_1_10"
                 p = ParamOutLineWork(parentId=parentid,name = INPARAM,descr=DESCR,workspaceId=workspaceId,director = d.userId,type = "SYNC")
-                
+        
         id = d.CreateDDLWork(projectName,p)
         if id is not None:
             try:  
@@ -89,6 +89,7 @@ if __name__ == '__main__':
                     script = ReplaceKeyWords(INPARAM,script,DESCR,False)
                 elif type == "ODS":
                     script = ReplaceKeyWords(INPARAM,script,DESCR,True)
+            
                     
                 p2 = ParamDDLContent(id= id ,workScript=script)
                 d.UpdateDDLWork(projectName,p2)
