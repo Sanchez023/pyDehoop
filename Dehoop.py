@@ -169,7 +169,7 @@ class Dehoop(Root):
         p = BaseStruct( projectId =  projectid,envId =  envid)
         self.c_prjdir, self.c_nodeMatch = DataDevelopment(
             self.request_url
-        ).QueryOutLineWork(self.token, self.tenantid, projectid, p)
+        ).QueryOutLineWork(self.token,  projectid, self.tenantid,p)
 
         if self.c_prjdir is not None:
             logger.info("查询离线作业成功")

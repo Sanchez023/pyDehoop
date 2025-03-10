@@ -346,7 +346,7 @@ class DataDevelopment(BaseModule):
   
     @api_request("GET","/dehoop-admin/job/outlinework/query","查询离线作业")
     def QueryOutLineWork(
-        self, token: str, tenantid: str, projectid: str, param:BaseStruct,response
+        self, token: str,  projectid: str,tenantid: str, param:BaseStruct,response=None
     ) -> tuple[dict, dict]:
 
       
