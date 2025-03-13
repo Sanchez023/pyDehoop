@@ -5,40 +5,49 @@ from ParamStruct import ParamEntitry
 # d = Dehoop("192.168.16.100","30104")
 d = Dehoop("10.1.8.17","30104")
 
-# d.Login("hbbxlb","hbbx@2024")
+d.Login("liub","hbbx@2024SxdC")
 
-d.token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MTI1MzI0NSwiaWF0IjoxNzQwOTk0MDQ1fQ.SnfX9ygULzs-VEY0-iYtNnAJgy-92alKh0R0OF2s1cifamwPU1eSS8VAa86CBJUbuI0YKPaIm3H7x3nkCqVt8Q"
-d.tenantid = "656609118399758336"
-projectName = "农险统计分析项目"
-d.DownloadStandars(projectName)
-dfs = pandas.read_excel("./File/批量建模模板.xlsx",sheet_name=None,header=None)
+# d.token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MTI1MzI0NSwiaWF0IjoxNzQwOTk0MDQ1fQ.SnfX9ygULzs-VEY0-iYtNnAJgy-92alKh0R0OF2s1cifamwPU1eSS8VAa86CBJUbuI0YKPaIm3H7x3nkCqVt8Q"
+# d.tenantid = "656609118399758336"
+projectName = "保单域模型开发"
+# d.DownloadStandars(projectName)
+df = pandas.read_excel("C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="养殖险标的信息表",header=None)
 
 
-dataLayerId = d.GetDataLayers(projectName)["ODS"]["id"]
-memorySpaceId = d.GetSpacesInfo(projectName)['测试开发存储空间']
-busniessType = d.GetBusinessProcesses(projectName)["ReadMe"]
+dataLayerId = d.GetDataLayers(projectName)["DWD"]["id"]
+memorySpaceId = d.GetSpacesInfo(projectName)['核心开发存储空间']
+busniessType = d.GetBusinessProcesses(projectName)["承保"]
 
-for sheetName in dfs:
-    df:DataFrame= dfs[sheetName]
-    df.columns = [i for i in range(0,len(df.columns))]
-    colums = df.iloc[3].fillna("remark").tolist()
-    tableCName = df.iloc[0,2]
-    tableName = df.iloc[1,2]
-    desc = df.iloc[2,2]
+# for sheetName in dfs:
+#     if sheetName not in ["保单险种信息轨迹表"]:
+#         continue
+#     df:DataFrame= dfs[sheetName]
+df.columns = [i for i in range(0,len(df.columns))]
+colums = df.iloc[3].fillna("remark").tolist()
+tableCName = df.iloc[0,2]
+tableName = df.iloc[1,2]
+desc = df.iloc[2,2]
 
-    data_frame = df.iloc[4:,:].reset_index(drop=True)
-    data_frame.columns= colums
-    # print(data_frame[0:2])
-    fields = {}
-    data_frame = data_frame[["标准字段分类","源表字段中文名","标准物理字段","主键","外键"]].fillna("")
+data_frame = df.iloc[4:,:].reset_index(drop=True)
+data_frame.columns= colums
+# print(data_frame[0:2])
+fields = {}
+data_frame = data_frame[["标准字段分类","源表字段中文名","标准物理字段","主键","外键","remark"]].fillna("")
+data_frame = data_frame[data_frame["remark"] == 0]
+p = ParamEntitry(tableCName,tableName,"ATOMIC_TRANSACTIONS",desc,dataLayerId,memorySpaceId,businessType=busniessType)
+id = d.CreateEntity(projectName,p)
+
+if id:
     
-    p = ParamEntitry(tableCName,tableName,"ATOMIC_TRANSACTIONS",desc,dataLayerId,memorySpaceId,businessType=busniessType)
-    id = d.CreateEntity(projectName,p)
+    try:
+        for i in data_frame.values:
+            isPK = False if i[3] == "" else True
+            isFK = False if i[4] == "" else True
+            
+            fields[i[2]] = {"clsName":i[0],"cname":i[1],"isPK":isPK,"isFK":isFK}
+        print(fields)
 
-    for i in data_frame.values:
-        isPK = False if i[3] == "" else True
-        isFK = False if i[4] == "" else True
-        fields[i[2]] = {"clsName":i[0],"cname":i[1],"isPK":isPK,"isFK":isFK}
-    
-    d.SaveEntitryFields(projectName,id,fields)
-    break
+        d.SaveEntitryFields(projectName,id,fields)
+    except Exception as e:
+        print(e)
+        d.DeleteEntity(projectName,id)

@@ -671,7 +671,7 @@ class Dehoop(Root):
         fields = GenerateJsonFields(field)
         p = BaseStruct(id=id,fields=fields)
       
-        res =  ModelBuilder(self.request_url).SaveeEntitryField(
+        res =  ModelBuilder(self.request_url).SaveEntitryField(
             self.token, projectid, self.tenantid,p
         )
         if res is not None:

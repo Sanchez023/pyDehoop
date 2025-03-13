@@ -2,14 +2,14 @@ from uuid import uuid4
 
 
 def generateUUID(isHyphen: bool = True):
-    '''生成UUID，若isHyphen为TRUE则会生成横杠用于间隔，若为False则会生成去除横杠的UUID'''
+    """生成UUID，若isHyphen为TRUE则会生成横杠用于间隔，若为False则会生成去除横杠的UUID"""
     if isHyphen:
         return uuid4().__str__()
     return uuid4().hex
 
 
 def Transerfrom_addColumn(origin_list: list[dict], tableName):
-    '''用于在原字段JOSN后后添加UUID参数等信息'''
+    """用于在原字段JOSN后后添加UUID参数等信息"""
     addColumns = []
     for dict_column in origin_list:
         dict_column["table"] = tableName
@@ -21,7 +21,7 @@ def Transerfrom_addColumn(origin_list: list[dict], tableName):
 
 
 def Transerfrom_mappingList(origin_list: list[dict], fromTable: str, toTableName: str):
-    '''用于在同步作业中匹配字段'''
+    """用于在同步作业中匹配字段"""
     mappingList = []
     for column in origin_list:
 
@@ -38,7 +38,7 @@ def Transerfrom_mappingList(origin_list: list[dict], fromTable: str, toTableName
 
 
 def ExtraColumn(field: str, table: str, func: str):
-    '''用于生成函数字段，func参数对应中台的函数文本'''
+    """用于生成函数字段，func参数对应中台的函数文本"""
     uuid = generateUUID(False)
     dict_extraColumn = {
         "addColumn": True,
@@ -54,7 +54,7 @@ def ExtraColumn(field: str, table: str, func: str):
 
 
 def ReMappingList(origin_list: list[dict], field: str, uuid: str):
-    '''重新匹配字段列表'''
+    """重新匹配字段列表"""
     temp = -1
     for index, map in enumerate(origin_list):
         if map["to"] == field:
@@ -64,7 +64,7 @@ def ReMappingList(origin_list: list[dict], field: str, uuid: str):
 
 
 def GetFieldInfosFromJS() -> dict:
-    '''用于从本地目录下读取数据标准的数据，需要提前下载成json格式'''
+    """用于从本地目录下读取数据标准的数据，需要提前下载成json格式"""
     import json
 
     with open("./standarsInfo/data.json", "r", encoding="utf-8") as f:
@@ -83,7 +83,7 @@ def GetFieldInfosFromJS() -> dict:
 
 
 def GenerateFieldJsonParam(**kwargs):
-    '''将读取到的单个文本字段转化为JSON形式的参数'''
+    """将读取到的单个文本字段转化为JSON形式的参数"""
     name = kwargs.get("name")
     id = kwargs.get("id")
     code = kwargs.get("code")
@@ -144,7 +144,7 @@ def GenerateFieldJsonParam(**kwargs):
 
 
 def GenerateJsonFields(fields: dict[str, dict]):
-    '''将所有的字段已JSON格式进行整合成一个集合'''
+    """将所有的字段已JSON格式进行整合成一个集合"""
     defaultField = {
         "moduleType": "NAME",
         "label": "名称",
@@ -186,9 +186,10 @@ def GenerateJsonFields(fields: dict[str, dict]):
         "fieldStandardId": None,
         "fieldStandardName": None,
         "active": False,
-        "$__seq_ID": "__seq_ID_797c560b-3d3e-a142-8471-b5a2aadd600a",
+        "$__seq_ID": "__seq_ID_" + generateUUID(True),
         "selected": False,
     }
+
     list_fields = [defaultField]
     dict_fields = GetFieldInfosFromJS()
     No = 1
@@ -230,6 +231,20 @@ def GenerateJsonFields(fields: dict[str, dict]):
         )
         list_fields.append(jsonField)
         No += 1
+    list_fields.append(
+        GenerateFieldJsonParam(
+            id="",
+            name="ELT时间戳",
+            code="elt_timestamp",
+            fieldType="TIMESTAMP",
+            comment="ELT时间戳",
+            pathName="",
+            modelRelationship="METRIC",
+            isPrimaryKey=False,
+            No=No,
+        )
+    )
+    print(pk_flag)
     if pk_flag:
         return list_fields
 

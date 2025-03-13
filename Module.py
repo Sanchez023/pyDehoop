@@ -500,7 +500,7 @@ class ModelBuilder(BaseModule):
         return False
 
     @api_request("POST","/dehoop-admin/modeling/saveEntityField?","保存业务实体字段信息")
-    def SaveeEntitryField(
+    def SaveEntitryField(
         self, token: str, projectid: str, tenantid: str, params: ParamEntitry,response
     ):
         if SAVE_SUCCESS == response["message"]:
