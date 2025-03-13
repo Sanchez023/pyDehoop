@@ -9,14 +9,14 @@ d.Login("liub","hbbx@2024SxdC")
 
 # d.token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkZWhvb3B1c2VyaWQiOiI2NTcyNTM5NTk3NjQ4MDM1ODQiLCJ0ZW5hbnRpZCI6IjY1NjYwOTExODM5OTc1ODMzNiIsImV4cCI6MTc0MTI1MzI0NSwiaWF0IjoxNzQwOTk0MDQ1fQ.SnfX9ygULzs-VEY0-iYtNnAJgy-92alKh0R0OF2s1cifamwPU1eSS8VAa86CBJUbuI0YKPaIm3H7x3nkCqVt8Q"
 # d.tenantid = "656609118399758336"
-projectName = "保单域模型开发"
+projectName = "理赔域模型开发"
 # d.DownloadStandars(projectName)
-df = pandas.read_excel("C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="养殖险标的信息表",header=None)
+df = pandas.read_excel("C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="立案信息表",header=None)
 
 
 dataLayerId = d.GetDataLayers(projectName)["DWD"]["id"]
 memorySpaceId = d.GetSpacesInfo(projectName)['核心开发存储空间']
-busniessType = d.GetBusinessProcesses(projectName)["承保"]
+busniessType = d.GetBusinessProcesses(projectName)["立案"]
 
 # for sheetName in dfs:
 #     if sheetName not in ["保单险种信息轨迹表"]:
@@ -40,12 +40,15 @@ id = d.CreateEntity(projectName,p)
 if id:
     
     try:
+        
         for i in data_frame.values:
-            isPK = False if i[3] == "" else True
-            isFK = False if i[4] == "" else True
+            
+            isPK = False if i[3] == '' else True
+            
+            isFK = False if i[4] == '' else True
             
             fields[i[2]] = {"clsName":i[0],"cname":i[1],"isPK":isPK,"isFK":isFK}
-        print(fields)
+        
 
         d.SaveEntitryFields(projectName,id,fields)
     except Exception as e:

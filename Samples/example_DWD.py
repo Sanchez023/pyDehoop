@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # toDbId = "682905336633360384"
     mysqlConnector = MySQLConnector("root","leo130", "localhost", "hbbx")
     dfs = pd.read_excel(
-        "C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="保单共保信息轨迹表",  header=None
+        "C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="立案信息表",  header=None
     )
 
     st_frame = dfs
@@ -51,11 +51,16 @@ if __name__ == "__main__":
     pk_fields = []
     str_fields = ""
     str_keys = ""
+    query_tableName = tableName.split("_")[-1]
+    # query_tableName = "gupolicycopydynamiclist"
+    res = mysqlConnector.execute_sql(f"select joinField from hbbx.tabletmp t  where tableName = '{query_tableName}'")
+    
     for field in data_frame.values:
         if field[0] != "":
             nor_fields.append(field[0])
-        if field[1]: 
-            pk_fields.append("DWD." + field[0] + " = ODS." + field[0])
+    for field in str(res[0][0]).split(","):
+        if field:
+            pk_fields.append("DWD." + field + " = ODS." + field)
 
     str_keys = " AND ".join(pk_fields)
 
@@ -81,7 +86,7 @@ if __name__ == "__main__":
     script = (
         f"""
 WITH STOCKDATA AS (
-    SELECT * FROM {tableName} t WHERE EXISTS (SELECT 1 FROM { originalTableName} o WHERE t.ds = {partitionField} )
+    SELECT * FROM {tableName} t WHERE EXISTS (SELECT 1 FROM { originalTableName} o WHERE t.ds = o.ds )
 )
 INSERT OVERWRITE TABLE {tableName} PARTITION (DS) 
 SELECT 
@@ -93,7 +98,7 @@ LEFT JOIN
 ON 
     {str_keys} 
 WHERE 
-    {nor_fields[0]} IS NULL  -- 请将 some_field 替换为实际字段名
+    ODS.{nor_fields[0]} IS NULL  -- 请将 some_field 替换为实际字段名
 UNION ALL
 SELECT
     {str_fields},
