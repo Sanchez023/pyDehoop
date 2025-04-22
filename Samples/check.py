@@ -2,7 +2,7 @@ import pandas
 from Dehoop import Dehoop
 from utils.TransFormer import GetFieldInfosFromJS
 
-dfs = pandas.read_excel("C:/Xiaomi Cloud/Desktop/dwd.xlsx",sheet_name="保单共保信息表",header=0)
+dfs = pandas.read_excel("C:/Xiaomi Cloud/Desktop/dwd.xlsx",sheet_name="分支机构信息表",header=0)
 
 data_frame = dfs
 data_frame = data_frame[["标准分类","来源字段名","标准英文名称","标准中文名"]].fillna("")

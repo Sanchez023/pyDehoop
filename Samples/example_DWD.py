@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # toDbId = "682905336633360384"
     mysqlConnector = MySQLConnector("root","leo130", "localhost", "hbbx")
     dfs = pd.read_excel(
-        "C:/Xiaomi Cloud/Desktop/DWD.xlsm",sheet_name="立案信息表",  header=None
+        "C:/Xiaomi Cloud/Desktop/DWE.xlsm",sheet_name="赔付文字信息表",  header=None
     )
 
     st_frame = dfs

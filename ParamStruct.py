@@ -259,3 +259,14 @@ class ParamEntitry(BaseStruct):
         self.id  = kwargs.get("id","")
         self.businessProcessId = businessType
 
+# {
+#   "name": "api_test_publish v0.2",
+#   "descr": "",
+#   "projectId": "660489178949091328",
+#   "srcEnvId": "660489357961986048",
+#   "dstEnvId": "660489525885140992",
+#   "workResourceId": [
+#     "698187700078903296",
+#     "694564484785635328"
+#   ]
+# }

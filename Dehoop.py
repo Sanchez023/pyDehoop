@@ -1,6 +1,6 @@
 from log import logger
 import socket
-from Module import LoginModule, PublicConfig, DataDevelopment,ModelBuilder
+from Module import LoginModule, PublicConfig, DataDevelopment, ModelBuilder
 from ParamStruct import (
     ParamOutLineWork,
     ParamDDLContent,
@@ -10,7 +10,7 @@ from ParamStruct import (
     ParamSyncJob,
     ParamDimension,
     ParamEntitry,
-    BaseStruct
+    BaseStruct,
 )
 from Table import DDLStruct, GetColumns, ReplaceKeyWords_spark, ReplaceKeyWords
 from utils.TransFormer import GenerateJsonFields
@@ -101,14 +101,16 @@ class Dehoop(Root):
             return False
 
     def PreQueryProject(func):
-        '''查询项目装饰函数'''
-        def wrapTheFunction(self,*args, **kwargs):
+        """查询项目装饰函数"""
+
+        def wrapTheFunction(self, *args, **kwargs):
             if self.projects is None:
                 logger.warning("未获取到项目信息，正在获取项目")
                 self.QueryProject()
-            return func(self,*args, **kwargs)
+            return func(self, *args, **kwargs)
+
         return wrapTheFunction
-        
+
     def QueryProject(self):
         """查询项目\n
         获取所有的项目名称以及对于的环境ID，对于的名称为ProjectName和envId。
@@ -117,9 +119,9 @@ class Dehoop(Root):
         项目ID和环境ID的字典"""
 
         if self.token is not None:
-            p = BaseStruct(searchWord="",page="1",pageSize = 2147483646)
+            p = BaseStruct(searchWord="", page="1", pageSize=2147483646)
             self.projects = PublicConfig(self.request_url).QueryProject(
-                self.token, "",self.tenantid,p
+                self.token, "", self.tenantid, p
             )
             if self.projects is not None:
                 logger.info("查询项目成功")
@@ -128,8 +130,8 @@ class Dehoop(Root):
         else:
             logger.error("未获取到token,请先登入")
             return None
-        
-    @PreQueryProject 
+
+    @PreQueryProject
     def QueryWorkSpace(self, projectName: str) -> dict[str, str] | None:
         """查询工作空间\n
         获取对应项目的工作空间id
@@ -141,11 +143,14 @@ class Dehoop(Root):
         workspaces(dict): 工作空间ID与工作空间名称的字典
         """
 
-
         logger.warning("未获取到项目信息，正在获取项目")
         self.QueryProject()
         envid: str = self.projects[projectName][1]
-        p = BaseStruct( envid= envid,searchWord ="",pageSize= "99999999",)
+        p = BaseStruct(
+            envid=envid,
+            searchWord="",
+            pageSize="99999999",
+        )
         result = PublicConfig(self.request_url).QueryWorkspace(self.token, p)
         if result is not None:
             self.c_workspaces = result
@@ -156,7 +161,7 @@ class Dehoop(Root):
             logger.error("查询工作空间失败")
             return None
 
-    @PreQueryProject  
+    @PreQueryProject
     def QueryOutLineWorks(self, projectName: str):
         """查询离线作业\n
         查询该项目下所有的作业的对应信息。
@@ -166,13 +171,14 @@ class Dehoop(Root):
 
         projectid: str = self.projects[projectName][0]
         envid: str = self.projects[projectName][1]
-        p = BaseStruct( projectId =  projectid,envId =  envid)
+        p = BaseStruct(projectId=projectid, envId=envid)
         self.c_prjdir, self.c_nodeMatch = DataDevelopment(
             self.request_url
-        ).QueryOutLineWork(self.token,  projectid, self.tenantid,p)
+        ).QueryOutLineWork(self.token, projectid, self.tenantid, p)
 
         if self.c_prjdir is not None:
             logger.info("查询离线作业成功")
+            return self.c_prjdir
             # logger.info(f"离线作业信息：{self.c_prjdir}")
         else:
             logger.error("查询离线作业失败")
@@ -202,6 +208,20 @@ class Dehoop(Root):
             logger.error(f"请检查当前作业名称是否重复'{param.name}'")
             return None
 
+    def GetScript(self, projectName: str, id: str):
+        """获取脚本内容"""
+        if self.c_prjdir is None:
+            logger.warning("未获取到项目目录信息，正在获取项目目录")
+            self.QueryOutLineWorks(projectName)
+        projectid: str = self.projects[projectName][0]
+        param = BaseStruct(workId=id)
+        result = DataDevelopment(self.request_url).GetScript(
+            self.token, projectid, self.tenantid, param
+        )
+        if result:
+            return result
+        return False
+
     def UpdateDDLWork(self, projectName: str, param: ParamDDLContent):
         """保存更新DDL作业
 
@@ -229,9 +249,9 @@ class Dehoop(Root):
             logger.warning("未获取到项目目录信息，正在获取项目目录")
             self.QueryOutLineWorks(projectName)
         projectid: str = self.projects[projectName][0]
-        p = BaseStruct(id = id)
+        p = BaseStruct(id=id)
         res = DataDevelopment(self.request_url).DeleteDDLWork(
-            self.token, projectid, self.tenantid,p
+            self.token, projectid, self.tenantid, p
         )
         if res:
             logger.info(f"删除'{id}'作业成功！")
@@ -374,6 +394,7 @@ class Dehoop(Root):
 
     def GetResourceType(self, projectName):
         import time
+
         """获取数据库类型\n
         该方法会获取对应项目下的所有的数据库类型
 
@@ -384,9 +405,9 @@ class Dehoop(Root):
             self.QueryOutLineWorks(projectName)
         projectid: str = self.projects[projectName][0]
         timestamp = int(time.time())
-        p = BaseStruct(timestamp = timestamp)
+        p = BaseStruct(timestamp=timestamp)
         res = PublicConfig(self.request_url).GetResourceType(
-            self.token, projectid, self.tenantid,p
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             self.c_dbsType = res
@@ -418,8 +439,8 @@ class Dehoop(Root):
             return res
         else:
             return None
-        
-    @PreQueryProject  
+
+    @PreQueryProject
     def GetColumnInfos(
         self,
         projectName: str,
@@ -447,8 +468,8 @@ class Dehoop(Root):
             return res
         else:
             return None
-        
-    @PreQueryProject  
+
+    @PreQueryProject
     def SaveOrUpdateSyncWork(
         self,
         projectName: str,
@@ -497,185 +518,241 @@ class Dehoop(Root):
             return None
 
     @PreQueryProject
-    def GetSpacesInfo(self,projectName:str)->dict[str,str]:
+    def GetSpacesInfo(self, projectName: str) -> dict[str, str]:
         projectid: str = self.projects[projectName][0]
-        
+
         p = BaseStruct(projectId=projectid)
         res = PublicConfig(self.request_url).GetSpacesInfo(
-            self.token, projectid, self.tenantid,p
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             return res
         else:
             logger.warning("未获取到储存空间信息")
             return None
-        
-    @PreQueryProject      
-    def GetDataFields(self,projectName:str)->dict[str,str]:
+
+    @PreQueryProject
+    def GetDataFields(self, projectName: str) -> dict[str, str]:
         projectid: str = self.projects[projectName][0]
         p = BaseStruct()
         res = PublicConfig(self.request_url).GetDataFields(
-            self.token, projectid, self.tenantid,p
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             return res
         else:
             logger.warning("未获取到数据域信息")
             return None
-        
-    @PreQueryProject     
-    def GetDataLayers(self,projectName:str)->dict[str,str]:
+
+    @PreQueryProject
+    def GetDataLayers(self, projectName: str) -> dict[str, str]:
         projectid: str = self.projects[projectName][0]
-        p = BaseStruct(projectId = projectid)
+        p = BaseStruct(projectId=projectid)
         res = PublicConfig(self.request_url).GetDataLayers(
-            self.token, projectid, self.tenantid,p
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             return res
         else:
             logger.warning("未获取到数据分层信息")
             return None
-        
-    @PreQueryProject     
-    def GetBusinessProcesses(self,projectName:str)->dict[str,str]:
-        projectid: str = self.projects[projectName][0]
-        dataFieldId:str = self.projects[projectName][2]
-        param = BaseStruct(dataField = dataFieldId)
-        res = PublicConfig(self.request_url).GetBusinessProcesses(
-            self.token, projectid, self.tenantid,param
-        )
-        if res is not None:
-            return res
-        else:
-            logger.warning("未获取到业务过程信息")
-            return None
-        
-    @PreQueryProject      
-    def CreateDimension(self,projectName:str,params:ParamDimension):
-        projectid: str = self.projects[projectName][0]
-        dataFieldId: str = self.projects[projectName][2]
-        params.projectId = projectid
-        params.dataFieldId = dataFieldId
-        res =  ModelBuilder(self.request_url).CreateDimension(
-            self.token, projectid, self.tenantid,params
-        )
-        if res is not None:
-            return res
-        else:
-            logger.warning("未获取到业务过程信息")
-            return None
-     
-    @PreQueryProject   
-    def UpdateDimension(self,projectName:str,params:ParamDimension):
-        projectid: str = self.projects[projectName][0]
-        dataFieldId: str = self.projects[projectName][2]
-        params.projectId = projectid
-        params.dataFieldId = dataFieldId
-        res =  ModelBuilder(self.request_url).UpdateDimension(
-            self.token, projectid, self.tenantid,params
-        )
-        if res is not None:
-            return res
-        else:
-            logger.warning("未获取到业务过程信息")
-            return None
-        
+
     @PreQueryProject
-    def DeleteDimension(self,projectName:str,id:str):
+    def GetBusinessProcesses(self, projectName: str) -> dict[str, str]:
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        param = BaseStruct(dataField=dataFieldId)
+        res = PublicConfig(self.request_url).GetBusinessProcesses(
+            self.token, projectid, self.tenantid, param
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
+
+    @PreQueryProject
+    def CreateDimension(self, projectName: str, params: ParamDimension):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res = ModelBuilder(self.request_url).CreateDimension(
+            self.token, projectid, self.tenantid, params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
+
+    @PreQueryProject
+    def UpdateDimension(self, projectName: str, params: ParamDimension):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res = ModelBuilder(self.request_url).UpdateDimension(
+            self.token, projectid, self.tenantid, params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务过程信息")
+            return None
+
+    @PreQueryProject
+    def DeleteDimension(self, projectName: str, id: str):
         projectid: str = self.projects[projectName][0]
         params = BaseStruct(id=id)
-        res =  ModelBuilder(self.request_url).DeleteDimension(
-            self.token, projectid, self.tenantid,params
+        res = ModelBuilder(self.request_url).DeleteDimension(
+            self.token, projectid, self.tenantid, params
         )
         if res is not None:
             return res
         else:
             logger.warning("未获取到业务过程信息")
             return None
-    
+
     @PreQueryProject
-    def DownloadStandars(self,projectName:str):
-        projectid:str = self.projects[projectName][0]
+    def DownloadStandars(self, projectName: str):
+        projectid: str = self.projects[projectName][0]
         p = BaseStruct()
-        res = PublicConfig(self.request_url).GetStandards(self.token,projectid,self.tenantid,p)
-        
+        res = PublicConfig(self.request_url).GetStandards(
+            self.token, projectid, self.tenantid, p
+        )
+
         if res is not None:
-            with open("./standarsInfo/data.json","w",encoding="utf-8") as f:
+            with open("./standarsInfo/data.json", "w", encoding="utf-8") as f:
                 f.write(res)
             return True
         else:
             logger.warning("为获取的标准字段信息")
             return None
-    
+
     @PreQueryProject
-    def SaveDimensionFields(self,projectName:str,id:str,field:list):
-        projectid:str = self.projects[projectName][0]
+    def SaveDimensionFields(self, projectName: str, id: str, field: list):
+        projectid: str = self.projects[projectName][0]
         fields = GenerateJsonFields(field)
-        p = BaseStruct(id=id,fields=fields)
-      
-        res =  ModelBuilder(self.request_url).SaveDimensionField(
-            self.token, projectid, self.tenantid,p
+        p = BaseStruct(id=id, fields=fields)
+
+        res = ModelBuilder(self.request_url).SaveDimensionField(
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             return res
         else:
             logger.warning("未能保存公共维度字段程信息")
             return None
-    
-    @PreQueryProject      
-    def CreateEntity(self,projectName:str,params:ParamEntitry):
-        projectid: str = self.projects[projectName][0]
-        dataFieldId: str = self.projects[projectName][2]
-        params.projectId = projectid
-        params.dataFieldId = dataFieldId
-        res =  ModelBuilder(self.request_url).CreateEntity(
-            self.token, projectid, self.tenantid,params
-        )
-        if res is not None:
-            return res
-        else:
-            logger.warning("未获取到业务实体信息")
-            return None
-     
-    @PreQueryProject   
-    def UpdateEntity(self,projectName:str,params:ParamEntitry):
-        projectid: str = self.projects[projectName][0]
-        dataFieldId: str = self.projects[projectName][2]
-        params.projectId = projectid
-        params.dataFieldId = dataFieldId
-        res =  ModelBuilder(self.request_url).UpdateEntity(
-            self.token, projectid, self.tenantid,params
-        )
-        if res is not None:
-            return res
-        else:
-            logger.warning("未获取到业务实体信息")
-            return None
-        
+
     @PreQueryProject
-    def DeleteEntity(self,projectName:str,id:str):
+    def CreateEntity(self, projectName: str, params: ParamEntitry):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res = ModelBuilder(self.request_url).CreateEntity(
+            self.token, projectid, self.tenantid, params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务实体信息")
+            return None
+
+    @PreQueryProject
+    def UpdateEntity(self, projectName: str, params: ParamEntitry):
+        projectid: str = self.projects[projectName][0]
+        dataFieldId: str = self.projects[projectName][2]
+        params.projectId = projectid
+        params.dataFieldId = dataFieldId
+        res = ModelBuilder(self.request_url).UpdateEntity(
+            self.token, projectid, self.tenantid, params
+        )
+        if res is not None:
+            return res
+        else:
+            logger.warning("未获取到业务实体信息")
+            return None
+
+    @PreQueryProject
+    def DeleteEntity(self, projectName: str, id: str):
         projectid: str = self.projects[projectName][0]
         params = BaseStruct(id=id)
-        res =  ModelBuilder(self.request_url).DeleteEntity(
-            self.token, projectid, self.tenantid,params
+        res = ModelBuilder(self.request_url).DeleteEntity(
+            self.token, projectid, self.tenantid, params
         )
         if res is not None:
             return res
         else:
             logger.warning("未获取到业务实体信息")
             return None
-    
+
     @PreQueryProject
-    def SaveEntitryFields(self,projectName:str,id:str,field:list):
-        projectid:str = self.projects[projectName][0]
+    def SaveEntitryFields(self, projectName: str, id: str, field: list):
+        projectid: str = self.projects[projectName][0]
         fields = GenerateJsonFields(field)
-        p = BaseStruct(id=id,fields=fields)
-      
-        res =  ModelBuilder(self.request_url).SaveEntitryField(
-            self.token, projectid, self.tenantid,p
+        p = BaseStruct(id=id, fields=fields)
+
+        res = ModelBuilder(self.request_url).SaveEntitryField(
+            self.token, projectid, self.tenantid, p
         )
         if res is not None:
             return res
         else:
             logger.warning("未能保存公共维度字段程信息")
             return None
+
+    @PreQueryProject
+    def PublishReview(self, projectName: str, desc: str):
+        projectid: str = self.projects[projectName][0]
+        p = BaseStruct()
+        ids: list = PublicConfig(self.request_url).QuerySubmited(
+            self.token, projectid, self.tenantid, p
+        )
+        if ids:
+            p = BaseStruct()
+            if PublicConfig(self.request_url).SubmitJob(
+                self.token, projectid, self.tenantid, p
+            ):
+                p = BaseStruct()
+                if PublicConfig(self.request_url).PublishJob(
+                    self.token, projectid, self.tenantid, p
+                ):
+                    if PublicConfig(self.request_url).ReviewPackage(
+                        self.token, projectid, self.tenantid, p
+                    ):
+                        return True
+            return False
+
+    @PreQueryProject
+    def ClearFlowBranch(self, projectName: str, flowid: str):
+        projectid: str = self.projects[projectName][0]
+        p = BaseStruct(flowid=flowid)
+        id = DataDevelopment(self.request_url).GetWebFlow(
+            self.token, projectid, self.tenantid, p
+        )
+        p = BaseStruct(
+            flowWebConfig=str(
+                [
+                    {
+                        "id": "START",
+                        "args": {"x": 50, "y": 274},
+                        "name": "start",
+                        "type": "flow",
+                    }
+                ]
+            ),
+            nodeIdList=["START"],
+            flowId=flowid,
+            flowRowConfig=[],
+            id=id,
+        )
+        res = DataDevelopment(self.request_url).SaveWebFlow(
+            self.token, projectid, self.tenantid, p
+        )
+        if res:
+            p = BaseStruct(branchLines=[], workid=id)
+            return DataDevelopment(self.request_url).SaveBranchLine(
+                self.token, projectid, self.tenantid, p
+            )

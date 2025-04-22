@@ -327,6 +327,24 @@ class PublicConfig(BaseModule):
     ):
         return json.dumps(response["data"])
     
+    
+    @api_request("POST","/dehoop-admin/job/outlinework/submitWork?","提交作业")
+    def SubmitJob(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
+        return True if response.get["message"] == "提交成功" else False
+    
+    @api_request("POST","sch/schedule/queryPage/submitWorks?","查询提交作业")
+    def QuerySubmited(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
+        if response.get("message") == "查询成功":
+            return [row["id"] for row in response.get["table"]]
+    
+    @api_request("POST","/sch/schedule/submit/works?","发布作业")
+    def PublishJob(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
+        return  True if response.get["message"] == "提交成功" else False
+    
+    @api_request("POST","/dehoop-admin/package/add?","审核上传")
+    def ReviewPackage(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
+        return True if response.get["message"] == "保存成功" else False
+    
 SAVE_SUCCESS = "保存成功"
 DELETE_SUCCESS = "删除成功"
 OPERATION_SUCCESS = "操作成功"
@@ -362,18 +380,17 @@ class DataDevelopment(BaseModule):
             """
 
             for work in child_work:
-                if work["type"] == "DIR":
-                    dict_works[work["id"]] = "/".join(
-                        [dict_works[parent], work["name"]]
-                    )
-                    dict_parent[work["id"]] = topid
+                dict_works[work["id"]] = {"name":"/".join(
+                    [dict_works[parent]["name"], work["name"]]
+                ),"type":work["type"]}
+                dict_parent[work["id"]] = topid
                 if work["child"]:
                     FindChildV2(work["child"], work["id"], topid)
 
         for work in response["data"]:
-            dict_works[work["id"]] = work["name"]
+            dict_works[work["id"]] = {"name":work["name"],"type":work["type"]}
             if work["child"]:
-                dict_works[work["id"]] = work["name"]
+                dict_works[work["id"]] = {"name":work["name"],"type":work["type"]}
                 dict_parent[work["id"]] = work["id"]
                 FindChildV2(work["child"], work["id"], work["id"])
         
@@ -388,6 +405,12 @@ class DataDevelopment(BaseModule):
         id = response["data"]["id"]
         logger.info(f"返回该作业id: {id}")
         return id
+     
+    @api_request("GET","/dehoop-admin/job/outlinework/workScript","获取脚本内容")
+    def GetScript(
+        self, token: str, projectid: str, tenantid: str, params: BaseStruct,response=None
+    ) -> str:
+        return response["data"]["workScript"]
      
     @api_request("POST","/dehoop-admin/job/outlinework/workScript","保存DDL作业")
     def SaveOrUpdateDDLWork(
@@ -436,6 +459,18 @@ class DataDevelopment(BaseModule):
     ) -> list:
         return response["data"]["tableColumnInfos"]
      
+    @api_request("GET","/dehoop-admin/job/outlinework/webFlow","获取作业流ID")
+    def GetWebFlow(self, token: str, projectid: str, tenantid: str, param: ParamColumnGet,response=None)->str:
+        return response["data"]["id"]
+    
+    @api_request("POST","/dehoop-admin/job/outlinework/webFlow","保存作业流-1")
+    def SaveWebFlow(self, token: str, projectid: str, tenantid: str, param: ParamColumnGet,response=None)->bool:
+        return True if response["message"] == "配置成功" else False
+    
+    @api_request("POST","/dehoop-admin/job/outlinework/flow/saveFlowBranchLine","保存作业流-2")
+    def SaveBranchLine(self, token: str, projectid: str, tenantid: str, param: ParamColumnGet,response=None)->bool:
+        return True if response["message"] == "操作成功" else False
+    
 class ModelBuilder(BaseModule):
     """维度建模类\n
     在该类下实现了对维度建模模块的部分功能"""
