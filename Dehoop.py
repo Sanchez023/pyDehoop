@@ -728,7 +728,7 @@ class Dehoop(Root):
     @PreQueryProject
     def ClearFlowBranch(self, projectName: str, flowid: str):
         projectid: str = self.projects[projectName][0]
-        p = BaseStruct(flowid=flowid)
+        p = BaseStruct(flowId=flowid)
         id = DataDevelopment(self.request_url).GetWebFlow(
             self.token, projectid, self.tenantid, p
         )
