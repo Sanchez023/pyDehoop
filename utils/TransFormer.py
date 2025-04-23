@@ -83,7 +83,13 @@ def GetFieldInfosFromJS() -> dict:
 
 
 def GenerateFieldJsonParam(**kwargs):
-    """将读取到的单个文本字段转化为JSON形式的参数"""
+    """将读取到的单个文本字段转化为JSON形式的参数\n
+    参数:
+        kwargs: 包含字段信息的关键字参数，包括name、id、code、fieldType等
+        
+    返回:
+        dict: 格式化后的字段JSON参数
+    """
     name = kwargs.get("name")
     id = kwargs.get("id")
     code = kwargs.get("code")

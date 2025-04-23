@@ -756,3 +756,58 @@ class Dehoop(Root):
             return DataDevelopment(self.request_url).SaveBranchLine(
                 self.token, projectid, self.tenantid, p
             )
+
+
+    @PreQueryProject
+    def PublishWorkBatch(self, projectName: str, workIds: list[str] = None, desc: str = "批量发布"):
+        """批量发布作业
+        
+        参数:
+            projectName: 项目名称
+            workIds: 要发布的作业ID列表，如果为None则发布所有已提交的作业
+            desc: 发布描述
+        
+        返回:
+            bool: 是否全部发布成功
+        """
+        projectid: str = self.projects[projectName][0]
+        
+        # 如果没有提供作业ID列表，则查询所有已提交的作业
+        if workIds is None:
+            p = BaseStruct()
+            workIds = PublicConfig(self.request_url).QuerySubmited(
+                self.token, projectid, self.tenantid, p
+            )
+        
+        if not workIds:
+            logger.warning("没有找到需要发布的作业")
+            return False
+        
+        success_count = 0
+        total_count = len(workIds)
+        
+        for work_id in workIds:
+            p = BaseStruct(id=work_id)
+            # 提交作业
+            if PublicConfig(self.request_url).SubmitJob(
+                self.token, projectid, self.tenantid, p
+            ):
+                # 发布作业
+                if PublicConfig(self.request_url).PublishJob(
+                    self.token, projectid, self.tenantid, p
+                ):
+                    # 审核作业
+                    if PublicConfig(self.request_url).ReviewPackage(
+                        self.token, projectid, self.tenantid, p
+                    ):
+                        success_count += 1
+                        logger.info(f"作业 {work_id} 发布成功")
+                    else:
+                        logger.error(f"作业 {work_id} 审核失败")
+                else:
+                    logger.error(f"作业 {work_id} 发布失败")
+            else:
+                logger.error(f"作业 {work_id} 提交失败")
+        
+        logger.info(f"批量发布完成，成功 {success_count}/{total_count}")
+        return success_count == total_count

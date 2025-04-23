@@ -7,6 +7,7 @@ from utils.TransFormer import Transerfrom_addColumn,Transerfrom_mappingList,Extr
 import pandas as pd
 import tqdm 
 if __name__ == '__main__':
+    # 示例脚本：演示如何创建DDL和同步作业
     
     # u = ''
     # passwd = ''

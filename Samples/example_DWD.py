@@ -13,6 +13,7 @@ from utils.Db import MySQLConnector
 import pandas as pd
 from datetime import datetime
 if __name__ == "__main__":
+    # 示例脚本：演示如何生成DWD层SQL脚本
 
     # u = ''
     # passwd = ''

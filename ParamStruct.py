@@ -89,7 +89,10 @@ class ParamDDLContent(BaseStruct):
 
 
 class ParamFlink(BaseStruct):
-    """
+    """Flink参数结构体\n
+    该类用于定义Flink任务的参数结构体
+    
+    示例格式:
         {
         "fromDbId": "643763299611049984",
         "toDbId": "643766294172139520",
@@ -107,9 +110,19 @@ class ParamFlink(BaseStruct):
 
 
 class ParamDBInfo(BaseStruct):
+    """数据库信息参数结构体\n
+    该类用于定义数据库信息的参数结构体
+    """
     def __init__(
         self, envId: str, type: bool = False, isInnerType: bool = False, **kwargs
     ):
+        """初始化数据库信息参数\n
+        参数:
+            envId: 环境ID
+            type: 类型标志，默认为False
+            isInnerType: 是否为内部类型，默认为False
+            kwargs: 其他参数
+        """
         super().__init__(**kwargs)
 
         self.envId = envId
@@ -118,9 +131,19 @@ class ParamDBInfo(BaseStruct):
 
 
 class ParamColumnGet(BaseStruct):
+    """获取列信息参数结构体\n
+    该类用于定义获取表列信息的参数结构体
+    """
     def __init__(
         self, dbSourceId: str, tableName: str, type: Literal["dist", "src"], **kwargs
     ):
+        """初始化获取列信息参数\n
+        参数:
+            dbSourceId: 数据源ID
+            tableName: 表名
+            type: 数据源方向，可选值为"dist"或"src"
+            kwargs: 其他参数，可包含schema和dataListPath
+        """
         super().__init__(**kwargs)
 
         self.dbSourceId = dbSourceId
@@ -131,6 +154,9 @@ class ParamColumnGet(BaseStruct):
 
 
 class ParamSyncJob(BaseStruct):
+    """同步作业参数结构体\n
+    该类用于定义数据同步作业的参数结构体
+    """
     def __init__(
         self,
         id: str,
@@ -144,6 +170,19 @@ class ParamSyncJob(BaseStruct):
         maxTransSpeed: int = 10,
         **kwargs
     ):
+        """初始化同步作业参数\n
+        参数:
+            id: 作业ID
+            fromDbId: 源数据库ID
+            fromTableName: 源表名
+            toDbId: 目标数据库ID
+            toTableName: 目标表名
+            mappingList: 字段映射列表
+            addColumn: 添加列列表
+            maxConCurrentNum: 最大并发数，默认为1
+            maxTransSpeed: 最大传输速度，默认为10
+            kwargs: 其他参数
+        """
         super().__init__(**kwargs)
 
         self.to_dict = self.dicts
@@ -206,6 +245,9 @@ class ParamSyncJob(BaseStruct):
 
 
 class ParamDimension(BaseStruct):
+    """维度参数结构体\n
+    该类用于定义维度模型的参数结构体
+    """
     def __init__(
         self,
         name: str,
@@ -219,6 +261,19 @@ class ParamDimension(BaseStruct):
         type: str = "GENERAL",
         **kwargs
     ):
+        """初始化维度参数\n
+        参数:
+            name: 维度名称
+            tableName: 表名
+            granularity: 粒度，可选值为"ATOMIC_TRANSACTIONS"或"PERIODIC_SNAPSHOT"
+            descr: 描述
+            dataLayerId: 数据层ID
+            memorySpaceId: 内存空间ID
+            dataFieldId: 数据字段ID，默认为None
+            projectId: 项目ID，默认为None
+            type: 类型，默认为"GENERAL"
+            kwargs: 其他参数，可包含id
+        """
         super().__init__(**kwargs)
         self.name = name
         self.tableName = tableName
@@ -232,6 +287,9 @@ class ParamDimension(BaseStruct):
         self.id  = kwargs.get("id",None)
         
 class ParamEntitry(BaseStruct):
+    """实体参数结构体\n
+    该类用于定义实体模型的参数结构体
+    """
     def __init__(
         self,
         name: str,
@@ -246,6 +304,20 @@ class ParamEntitry(BaseStruct):
         businessType:str=None,
         **kwargs
     ):
+        """初始化实体参数\n
+        参数:
+            name: 实体名称
+            tableName: 表名
+            granularity: 粒度，可选值为"ATOMIC_TRANSACTIONS"或"PERIODIC_SNAPSHOT"
+            descr: 描述
+            dataLayerId: 数据层ID
+            memorySpaceId: 内存空间ID
+            dataFieldId: 数据字段ID，默认为None
+            projectId: 项目ID，默认为None
+            type: 类型，默认为"GENERAL"
+            businessType: 业务类型，默认为None
+            kwargs: 其他参数，可包含id
+        """
         super().__init__(**kwargs)
         self.name = name
         self.tableName = tableName
