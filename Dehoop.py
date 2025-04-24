@@ -704,26 +704,64 @@ class Dehoop(Root):
             return None
 
     @PreQueryProject
-    def PublishReview(self, projectName: str, desc: str):
+    def PublishReview(self, projectName: str, flowid: str, desc: str = None):
         projectid: str = self.projects[projectName][0]
-        p = BaseStruct()
-        ids: list = PublicConfig(self.request_url).QuerySubmited(
+        print(self.c_nodeMatch is None)
+
+        ids = [k for k, v in self.c_nodeMatch.items() if v == flowid]
+     
+
+        index = 0
+        for n in range(0, len(ids) // 10):
+            for id in ids[index : index + 10]:
+                p = BaseStruct(id=id)
+                PublicConfig(self.request_url).SubmitJob(
+                    self.token, projectid, self.tenantid, p
+                )
+            new_ids: list = PublicConfig(self.request_url).QuerySubmited(
+                self.token, projectid, self.tenantid, p
+            )
+            p = BaseStruct(
+                envId=self.projects[projectName][1],
+                flowId=flowid,
+                page=1,
+                pageSize=20,
+            )
+            p = BaseStruct(idList=new_ids, comment="")
+            PublicConfig(self.request_url).PublishJob(
+                self.token, projectid, self.tenantid, p
+            )
+            index += 10
+        for id in ids[index:]:
+            p = BaseStruct(id=id)
+            PublicConfig(self.request_url).SubmitJob(
+                self.token, projectid, self.tenantid, p
+            )
+        p = BaseStruct(
+            envId=self.projects[projectName][1], flowId=flowid, page=1, pageSize=20
+        )
+        new_ids: list = PublicConfig(self.request_url).QuerySubmited(
             self.token, projectid, self.tenantid, p
         )
-        if ids:
-            p = BaseStruct()
-            if PublicConfig(self.request_url).SubmitJob(
-                self.token, projectid, self.tenantid, p
-            ):
-                p = BaseStruct()
-                if PublicConfig(self.request_url).PublishJob(
-                    self.token, projectid, self.tenantid, p
-                ):
-                    if PublicConfig(self.request_url).ReviewPackage(
-                        self.token, projectid, self.tenantid, p
-                    ):
-                        return True
-            return False
+        p = BaseStruct(idList=new_ids, comment="")
+        PublicConfig(self.request_url).PublishJob(
+            self.token, projectid, self.tenantid, p
+        )
+
+    # if ids:
+    #     p = BaseStruct()
+    #     if PublicConfig(self.request_url).SubmitJob(
+    #         self.token, projectid, self.tenantid, p
+    #     ):
+    #         p = BaseStruct()
+    #         if PublicConfig(self.request_url).PublishJob(
+    #             self.token, projectid, self.tenantid, p
+    #         ):
+    #             if PublicConfig(self.request_url).ReviewPackage(
+    #                 self.token, projectid, self.tenantid, p
+    #             ):
+    #                 return True
+    #     return False
 
     @PreQueryProject
     def ClearFlowBranch(self, projectName: str, flowid: str):
@@ -757,35 +795,36 @@ class Dehoop(Root):
                 self.token, projectid, self.tenantid, p
             )
 
-
     @PreQueryProject
-    def PublishWorkBatch(self, projectName: str, workIds: list[str] = None, desc: str = "批量发布"):
+    def PublishWorkBatch(
+        self, projectName: str, workIds: list[str] = None, desc: str = "批量发布"
+    ):
         """批量发布作业
-        
+
         参数:
             projectName: 项目名称
             workIds: 要发布的作业ID列表，如果为None则发布所有已提交的作业
             desc: 发布描述
-        
+
         返回:
             bool: 是否全部发布成功
         """
         projectid: str = self.projects[projectName][0]
-        
+
         # 如果没有提供作业ID列表，则查询所有已提交的作业
         if workIds is None:
             p = BaseStruct()
             workIds = PublicConfig(self.request_url).QuerySubmited(
                 self.token, projectid, self.tenantid, p
             )
-        
+
         if not workIds:
             logger.warning("没有找到需要发布的作业")
             return False
-        
+
         success_count = 0
         total_count = len(workIds)
-        
+
         for work_id in workIds:
             p = BaseStruct(id=work_id)
             # 提交作业
@@ -808,6 +847,6 @@ class Dehoop(Root):
                     logger.error(f"作业 {work_id} 发布失败")
             else:
                 logger.error(f"作业 {work_id} 提交失败")
-        
+
         logger.info(f"批量发布完成，成功 {success_count}/{total_count}")
         return success_count == total_count

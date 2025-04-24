@@ -328,22 +328,22 @@ class PublicConfig(BaseModule):
         return json.dumps(response["data"])
     
     
-    @api_request("POST","/dehoop-admin/job/outlinework/submitWork?","提交作业")
+    @api_request("POST","/dehoop-admin/job/outlinework/submitWork","提交作业")
     def SubmitJob(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
-        return True if response.get["message"] == "提交成功" else False
+        return True if response.get("message") == "提交成功" else False
     
-    @api_request("POST","sch/schedule/queryPage/submitWorks?","查询提交作业")
+    @api_request("POST","/dehoop-admin/sch/schedule/queryPage/submitWorks","查询提交作业")
     def QuerySubmited(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
         if response.get("message") == "查询成功":
-            return [row["id"] for row in response.get["table"]]
+            return [row["id"] for row in response.get("table")]
     
-    @api_request("POST","/sch/schedule/submit/works?","发布作业")
+    @api_request("POST","/dehoop-admin/sch/schedule/submit/works","发布作业")
     def PublishJob(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
-        return  True if response.get["message"] == "提交成功" else False
+        return  True if response.get("message") == "提交成功" else False
     
-    @api_request("POST","/dehoop-admin/package/add?","审核上传")
+    @api_request("POST","/dehoop-admin/package/add","审核上传")
     def ReviewPackage(self, token: str, projectid: str, tenantid: str,param:BaseStruct,response=None):
-        return True if response.get["message"] == "保存成功" else False
+        return True if response.get("message") == "保存成功" else False
     
 SAVE_SUCCESS = "保存成功"
 DELETE_SUCCESS = "删除成功"
